@@ -1,0 +1,112 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync Attendance</title>
+    <style>table{border-collapse: collapse;width: 50%;} td,th,tr{padding: 1%;}</style>
+    <script src="jquery.js"></script>
+  </head>
+  <body>
+
+    <h1>Data view</h1>
+
+    <!-- https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs.json -->
+
+    <input type="date" id="dateTbs" name="dateTbs">
+
+    <button onclick="getData()">Search</button>
+
+    <table border="1">
+      <thead><tr><th>ID</th><th>Name</th><th>In</th><th>Out</th><th>Hours</th></tr></thead>
+
+      <tbody id="tabl">
+
+      </tbody>
+
+    </table>
+
+
+    <script>
+      function getTimeDifference(start, end) {
+          const staDt =  new Date(start);
+          const endDt =  new Date(end);
+          const timeDifference = Math.abs(endDt - staDt);
+          const hours = Math.floor(timeDifference / (1000 * 60 * 60)) || "-";
+          const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+          const srtStr = isNaN(staDt) ?  "-" : staDt.getHours()+":"+staDt.getMinutes()+":"+staDt.getSeconds();
+          const endStr = isNaN(endDt) ?  "-" : endDt.getHours()+":"+endDt.getMinutes()+":"+endDt.getSeconds();
+          return { hours, minutes, seconds , srtStr, endStr};
+      }
+
+      var usersObj = {};
+      $.ajax({
+        url: 'https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs/users.json',
+        method: 'GET',
+        success: function(users) { 
+          if(users){
+              users.data.forEach(v => {
+              // if(!usersObj[v.userId]){
+                usersObj[v.userId] = v;
+              // }
+            });
+            console.log(usersObj);
+          }
+        },
+        error: function(xhr, status, error) {console.error('Error:', status, error);}
+      });      
+
+
+      function getData() {
+        $.ajax({
+            url: 'https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs/logs/'+$("#dateTbs").val()+'.json', // Replace with your API endpoint
+            method: 'GET',
+            success: function(data) {
+              // console.log('Data:', data);
+              // rows += "<tr><td>"+v.deviceUserId+"</td><td>"+v.recordTime+"</td><td></td><td></td><td></td></tr>";
+              $("#tabl").empty();
+              if(data){
+                let rows = "";
+                let userWise = {};
+                data.forEach(v => {
+                  if(!userWise[v.deviceUserId]){
+                    userWise[v.deviceUserId] = {"start":v.recordTime,"end":""};
+                  }else{
+                    userWise[v.deviceUserId]["end"] = v.recordTime;
+                    // console.log(userWise[v.deviceUserId]);
+                  }
+                });
+                
+                // console.log(usersObj);
+                Object.keys(usersObj).forEach(function(k,i) {
+
+                  if(userWise[k]){
+                      let timNdif = getTimeDifference(userWise[k]["start"], userWise[k]["end"]);
+                      rows += "<tr><td>"+k+"</td><td>"+usersObj[k]["name"]+"</td><td>"+timNdif.srtStr+"</td><td>"+timNdif.endStr+"</td><td>"+timNdif.hours+"</td></tr>";
+                  }else{
+                      rows += "<tr><td>"+k+"</td><td>"+usersObj[k]["name"]+"</td><td>-</td><td>-</td><td>-</td></tr>";
+                  }
+                  // getTimeDifference(userWise[k]["start"], userWise[k]["end"])
+                });
+                $("#tabl").append(rows);
+                // Object.keys(userWise).forEach(function(k,i) {
+                //     // console.log(getTimeDifference(userWise[k]["start"], userWise[k]["end"]));
+                //     console.log(k);
+                // });
+              }else{
+                console.log("No data found.");
+              }
+            },
+            error: function(xhr, status, error) {console.error('Error:', status, error);}
+        });
+        
+      }
+
+    </script>
+
+
+
+</body>
+</html>
