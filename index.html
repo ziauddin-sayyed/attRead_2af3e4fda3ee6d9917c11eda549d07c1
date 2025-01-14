@@ -208,8 +208,8 @@
         const selectedYear = parseInt(document.getElementById('year').value);
         const selectedMonth = parseInt(document.getElementById('month-select').value) - 1;
         
-        // const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-        const daysInMonth = 9;
+        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+        // const daysInMonth = 9;
         // const dates = {};
         $("#tabl-monthly-head").empty().append("<th>Name</th>");
         $("#tabl-monthly").empty();
