@@ -105,8 +105,9 @@
       <input type="date" id="dateTbs" name="dateTbs">
 
       <button onclick="getData()">Search</button>
+      <button onclick="copyTableToClipboard()">Copy Data</button>
   
-      <table border="1">
+      <table border="1" id="dateWiseTbl">
         <thead><tr><th>ID</th><th>Name</th><th>In</th><th>Out</th><th>Hours:Min</th></tr></thead>
   
         <tbody id="tabl">
@@ -393,6 +394,32 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.tab-button').click(); // Automatically click the first tab
         });
+
+        function copyTableToClipboard() {
+            const table = document.getElementById('dateWiseTbl');
+            let tableText = '';
+            
+            // Loop through each row
+            for (let row of table.rows) {
+                let rowText = '';
+                // Loop through each cell in the row
+                for (let cell of row.cells) {
+                    rowText += cell.textContent + '\t'; // Tab between cells
+                }
+                tableText += rowText.trim() + '\n'; // New line between rows
+            }
+
+            // Create a temporary textarea to copy text to clipboard
+            const textarea = document.createElement('textarea');
+            textarea.value = tableText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            alert("Table copied to clipboard! You can now paste it into Excel.");
+        }
+
 
     </script>
 
