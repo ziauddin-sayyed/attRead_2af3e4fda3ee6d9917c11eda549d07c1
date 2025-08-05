@@ -1,429 +1,946 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sync Attendance</title>
-    <style>table{border-collapse: collapse;min-width: 50%; table-layout: auto;  width: auto;} td,th,tr{padding: 1%;}</style>
-    <script src="jquery.js"></script>
+    <title>Attendance Tracking</title>
     <style>
-      .tabs {
-          display: flex;
-      }
-
-      .tab-button {
-          padding: 10px;
-          cursor: pointer;
-          border: 1px solid #ccc;
-          background-color: #f1f1f1;
-          margin-right: 5px;
-          border-radius: 4px;
-      }
-
-      .tab-button:hover {
-          background-color: #ddd;
-      }
-
-      .tab-content {
-          display: none;
-          /* padding: 20px; */
-          border: 1px solid #ccc;
-          border-top: none;
-          margin-top: 10px;
-      }
-
-      .tab-button.active {
-          background-color: #ccc;
-      }
-      #loading{display: none;}
-      td {
-        padding: 3%;
-    /* width: 150px;        Set a specific width */
-    /* white-space: nowrap; /* Prevent wrapping */
-    /* overflow: hidden;    Hide overflowing content */
-    /* text-overflow: ellipsis; Add ellipsis to overflowing text */ 
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
         }
-
-        /* Container to enable horizontal scroll */
-        .table-container {
-            max-width: 100%;      /* Limit container width (can be adjusted) */
-            overflow-x: auto;     /* Enable horizontal scrolling */
-            border: 1px solid #ccc; /* Optional border for the container */
-            max-height: 100vh;
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
         }
-
-        table {
-            width: auto;           /* Let the table grow based on content */
-            border-collapse: collapse;
-            table-layout: auto;    /* Automatically adjust table layout */
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
         }
-
-        td {
-            padding: 10px;
-            border: 1px solid #ccc;
-            white-space: nowrap;   /* Prevent text from wrapping */
+        
+        .file-controls {
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
         }
-        td:first-child{
-            position: sticky;
+        
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .filters.visible {
+            display: block;
+        }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .filter-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+        
+        .file-input {
+            margin: 5px;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 200px;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            min-width: 120px;
+        }
+        
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .user-dropdown-button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+            min-width: 200px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-dropdown-button:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .user-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            top: 100%;
             left: 0;
-            background-color: #fff;  
-            z-index: 1;            
         }
+        
+        .user-dropdown-content.show {
+            display: block;
+        }
+        
+        .user-option {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .user-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .user-option input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .select-all-option {
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        
+        .load-btn, .filter-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .load-btn:hover, .filter-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .load-btn:disabled, .filter-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .filter-btn {
+            background-color: #2196F3;
+        }
+        
+        .filter-btn:hover {
+            background-color: #1976D2;
+        }
+        
+        .clear-btn {
+            background-color: #ff9800;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .clear-btn:hover {
+            background-color: #f57c00;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+            display: none;
+        }
+        
+        table.visible {
+            display: table;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
         th {
-            background-color: #f4f4f4;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
             position: sticky;
             top: 0;
-            z-index: 2;  
-            padding: 10px 0;
+            z-index: 10;
         }
-        th:first-child{
-          z-index: 3; 
-          left: 0;
+        
+        .user-id {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            left: 0;
+            z-index: 5;
         }
-        th span {
-            display: inline-block;
-            width: 33.33%;      
-            text-align: center;   
-            outline: black solid 1px;
+        
+        .date-header {
+            background-color: #2196F3;
+            color: white;
         }
-
+        
+        .in-header {
+            background-color: #4CAF50;
+        }
+        
+        .out-header {
+            background-color: #ff9800;
+        }
+        
+        .in-time {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .out-time {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .empty-cell {
+            background-color: #fafafa;
+            color: #999;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .instructions code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        .sample-format {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .filter-summary {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #1565c0;
+            text-align: center;
+        }
+        .short-duration {
+            background-color: #f8d7da !important;
+            color: #721c24;
+            font-weight: bold;
+        }
 
     </style>
-  </head>
-  <body>
-
-    <div class="tabs">
-      <button class="tab-button" onclick="openTab(event, 'tab1')"><h3>Date wise</h3> </button>
-      <button class="tab-button" onclick="openTab(event, 'tab2')"><h3>Teacher Monthly</h3> </button>
-    </div>
-
-    <!-- https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs.json -->
-
-    <div id="tab1" class="tab-content">
-
-      <input type="date" id="dateTbs" name="dateTbs">
-
-      <button onclick="getData()">Search</button>
-      <button onclick="copyTableToClipboard()">Copy Data</button>
-  
-      <table border="1" id="dateWiseTbl">
-        <thead><tr><th>ID</th><th>Name</th><th>In</th><th>Out</th><th>Hours:Min</th></tr></thead>
-  
-        <tbody id="tabl">
-  
-        </tbody>
-  
-      </table>
-
-    </div>
-
-  <div id="tab2" class="tab-content">
-
-    <select id="teachersList" style="display: none;">
-      <option value="">--Select Teacher--</option>
-    </select>
-    <select id="year">
-      <option value="2024">2024</option>
-      <option value="2025">2025</option>
-      <option value="2026">2026</option>
-    </select>
-  
-
-    <select id="month-select">
-        <option value="">--Choose a Month--</option>
-        <option value="1">January</option>
-        <option value="2">February</option>
-        <option value="3">March</option>
-        <option value="4">April</option>
-        <option value="5">May</option>
-        <option value="6">June</option>
-        <option value="7">July</option>
-        <option value="8">August</option>
-        <option value="9">September</option>
-        <option value="10">October</option>
-        <option value="11">November</option>
-        <option value="12">December</option>
-    </select>
-
-    <button onclick="getMonthly()">Search</button>
-    <img id="loading" src="loading.gif" alt="">
-
-    <div class="table-container">
-      <table border="1">
-        <thead><tr id="tabl-monthly-head"><th>Name <br></th></tr></thead>      
-        <tbody id="tabl-monthly">
-
-        </tbody>
-
-      </table>
-    </div>
-
-
-
-  </div>
-
-
-
-    <script>
-      function getTimeDifference(start, end) {
-          const staDt =  new Date(start);
-          const endDt =  new Date(end);
-          const timeDifference = Math.abs(endDt - staDt);
-          const hours = Math.floor(timeDifference / (1000 * 60 * 60)) || "-";
-          const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60)) || "-";
-          const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
-          // const srtStr = isNaN(staDt) ?  "-" : staDt.getHours()+":"+staDt.getMinutes()+":"+staDt.getSeconds();
-          // const endStr = isNaN(endDt) ?  "-" : endDt.getHours()+":"+endDt.getMinutes()+":"+endDt.getSeconds();
-          const srtStr = isNaN(staDt) ?  "-" : staDt.getHours()+":"+staDt.getMinutes();
-          const endStr = isNaN(endDt) ?  "-" : endDt.getHours()+":"+endDt.getMinutes();
-          return { hours, minutes, seconds , srtStr, endStr};
-      }
-
-      var usersObj = {};
-      $.ajax({
-        url: 'https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs/users.json',
-        method: 'GET',
-        success: function(users) { 
-          if(users){
-              users.data.forEach(v => {
-              // if(!usersObj[v.userId]){
-                usersObj[v.userId] = v;
-              // }
-              const select = document.getElementById('teachersList');
-              const newOption = document.createElement('option');
-              newOption.value = v.userId;
-              newOption.textContent = v.name;
-              select.appendChild(newOption);
-            });
-            console.log(usersObj);
-          }
-        },
-        error: function(xhr, status, error) {console.error('Error:', status, error);}
-      });
-      const daysOfWeek = ["Sun","Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-
-      function getMonthly() {
-
-        const selectedYear = parseInt(document.getElementById('year').value);
-        const selectedMonth = parseInt(document.getElementById('month-select').value) - 1;
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Attendance Tracking</h1>
         
-        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-        // const daysInMonth = 9;
-        // const dates = {};
-        $("#tabl-monthly-head").empty().append("<th>Name</th>");
-        $("#tabl-monthly").empty();
-
-        var i = 0;
-
-        $.each(usersObj, function(k, v) {
-
-          i++;
-        // Object.keys(usersObj).forEach(function(v,k) {
-          // console.log(k,v);
-          var row = "<tr rowInd='"+v.userId+"' ><td>"+v.name+"</td>";
-
-          for (let day = 1; day <= daysInMonth; day++) {
-
-            const date = new Date(selectedYear, selectedMonth, day); 
-            // const formattedDate = date.toISOString().split('T')[0]; 
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');  // Add 1 because months are 0-based
-            const dt = String(date.getDate()).padStart(2, '0'); // Ensure two digits for dt
-            const formattedDate = `${year}-${month}-${dt}`;
-
-            if(i == 1){
-              var labl = "<br><span>in</span><span>out</span><span>hrs</span>";
-              $("#tabl-monthly-head").append("<th colspan='3' >"+dt+"-"+daysOfWeek[date.getDay()]+labl+"</th>");
-            }
-
-            var colIn  = v.userId+"_"+formattedDate+"_in";
-            var colOut = v.userId+"_"+formattedDate+"_out";
-            var colTot = v.userId+"_"+formattedDate+"_tot";
-
-            var cols = "<td colInd='"+colIn+"' >-</td>"+"<td colInd='"+colOut+"' >-</td>"+"<td colInd='"+colTot+"' >-</td>";
-
-            // col += "</td>";
-            row += cols;
-          }
-
-          row += "</tr>";
-
-          $("#tabl-monthly").append(row);
-
-
-        });
-
-        // $("#tabl-monthly").
+        <div class="instructions">
+            <h3>Setup Instructions:</h3>
+            <ol>
+                <li>Place your CSV file in the same directory as this HTML file</li>
+                <li>Enter the filename in the input below (e.g., <code>attendance.csv</code>)</li>
+                <li>Serve this directory using a local web server:
+                    <ul>
+                        <li><strong>Python:</strong> <code>python -m http.server 8000</code></li>
+                        <li><strong>Node.js:</strong> <code>npx http-server</code></li>
+                        <li><strong>PHP:</strong> <code>php -S localhost:8000</code></li>
+                    </ul>
+                </li>
+                <li>Open <code>http://localhost:8000</code> in your browser</li>
+            </ol>
+        </div>
         
-        // return;
-
-        $("#loading").css("display","inline-block");
-        var reqCount = 0;
-
-        for (let day = 1; day <= daysInMonth; day++) {
-          const date = new Date(selectedYear, selectedMonth, day); 
-          // const formattedDate = date.toISOString().split('T')[0]; 
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');  // Add 1 because months are 0-based
-          const dt = String(date.getDate()).padStart(2, '0'); // Ensure two digits for dt
-          const formattedDate = `${year}-${month}-${dt}`;
-
-          // $("#tabl-monthly").append("<tr><td>"+formattedDate+"<br>"+daysOfWeek[date.getDay()]+"</td><td>-</td><td>-</td><td>-</td></tr>");
-
-          $.ajax({
-              url: 'https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs/logs/'+formattedDate+'.json', // Replace with your API endpoint
-              method: 'GET',
-              success: function(data) {
-                let rows = "";
-                if(data){
-                  var inTime = "";var outTime = "";
-                  data.forEach(function(v,i) {
-                      // if(v.deviceUserId == $("#teachersList").val()){
-                        // !inTime ? inTime = v.recordTime : outTime = v.recordTime ;
-                      // }
-                      var inCol = v.deviceUserId+"_"+formattedDate+"_in";
-                      var outCol = v.deviceUserId+"_"+formattedDate+"_out";
-
-                      if($('td[colInd="'+inCol+'"]').text() == "-"){
-                        var timNdif = getTimeDifference(v.recordTime,v.recordTime);
-                        $('td[colInd="'+inCol+'"]').text(timNdif.srtStr);
-                        $('td[colInd="'+outCol+'"]').attr("inTime",v.recordTime);
-
-                      }else{
-                        var timNdif = getTimeDifference($('td[colInd="'+outCol+'"]').attr("inTime"),v.recordTime);
-                        var totCol = v.deviceUserId+"_"+formattedDate+"_tot";
-
-                        $('td[colInd="'+outCol+'"]').text(timNdif.endStr);
-                        $('td[colInd="'+totCol+'"]').text(timNdif.hours+":"+timNdif.minutes);
-                      }
-
-                  });
-                  // var timNdif = getTimeDifference(inTime,outTime);
-                  // $('#myTable tr:nth-child(1) td:nth-child(2)').text('Updated Value');
-                  // dates[day] = "<tr><td>"+formattedDate+"</td><td>"+daysOfWeek[date.getDay()]+"</td><td>"+timNdif.srtStr+"</td><td>"+timNdif.endStr+"</td><td>"+timNdif.hours+"</td></tr>";
-                  // $("#tabl-monthly tr:nth-child(1) td:nth-child("+((day-1)*3)+2+")").text(timNdif.srtStr);
-                  // $("#tabl-monthly tr:nth-child(1) td:nth-child("+((day-1)*3)+3+")").text(timNdif.endStr);
-                  // $("#tabl-monthly tr:nth-child(1) td:nth-child("+((day-1)*3)+4+")").text(timNdif.hours+":"+timNdif.minutes);
-                  // $("#tabl-monthly tr:nth-child("+day+") td:nth-child(3)").text(timNdif.endStr);
-                  // $("#tabl-monthly tr:nth-child("+day+") td:nth-child(4)").text(timNdif.hours+":"+timNdif.minutes);
-                }else{
-                  // dates[day] = "<tr><td>"+formattedDate+"</td><td>"+daysOfWeek[date.getDay()]+"</td><td>-</td><td>-</td><td>-</td></tr>";
-                  // $("#tabl-monthly").append(rows);
-                }
-                reqCount++;
-                // console.log(reqCount,daysInMonth);
+        <div class="file-controls">
+            <input type="text" id="filename" class="file-input" placeholder="Enter CSV filename (e.g., attendance.csv)" value="attendance.csv" />
+            <button onclick="loadLocalCSV()" class="load-btn" id="loadBtn">Load CSV File</button>
+        </div>
+        
+        <div id="filters" class="filters">
+            <h3 style="margin-top: 0; text-align: center; color: #495057;">Filter Options</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="yearFilter">Year:</label>
+                    <select id="yearFilter" class="filter-select">
+                        <option value="">All Years</option>
+                    </select>
+                </div>
                 
-                reqCount >= daysInMonth ? $("#loading").css("display","none") : false;
-              },
-              error: function(xhr, status, error) {console.error('Error:', status, error);}
-          });
-
-        }
-
-        console.log("dates");
-        
-      }
-
-
-      function getData() {
-        $.ajax({
-            url: 'https://weblytics-d9d76-default-rtdb.firebaseio.com/buhs/logs/'+$("#dateTbs").val()+'.json', // Replace with your API endpoint
-            method: 'GET',
-            success: function(data) {
-              // console.log('Data:', data);
-              // rows += "<tr><td>"+v.deviceUserId+"</td><td>"+v.recordTime+"</td><td></td><td></td><td></td></tr>";
-              $("#tabl").empty();
-              if(data){
-                let rows = "";
-                let userWise = {};
-                data.forEach(v => {
-                  if(!userWise[v.deviceUserId]){
-                    userWise[v.deviceUserId] = {"start":v.recordTime,"end":""};
-                  }else{
-                    userWise[v.deviceUserId]["end"] = v.recordTime;
-                    // console.log(userWise[v.deviceUserId]);
-                  }
-                });
+                <div class="filter-group">
+                    <label for="monthFilter">Month:</label>
+                    <select id="monthFilter" class="filter-select">
+                        <option value="">All Months</option>
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
                 
-                // console.log(usersObj);
-                Object.keys(usersObj).forEach(function(k,i) {
-
-                  if(userWise[k]){
-                      let timNdif = getTimeDifference(userWise[k]["start"], userWise[k]["end"]);
-                      rows += "<tr><td>"+k+"</td><td>"+usersObj[k]["name"]+"</td><td>"+timNdif.srtStr+"</td><td>"+timNdif.endStr+"</td><td>"+timNdif.hours+":"+timNdif.minutes+"</td></tr>";
-                  }else{
-                      rows += "<tr><td>"+k+"</td><td>"+usersObj[k]["name"]+"</td><td>-</td><td>-</td><td>-</td></tr>";
-                  }
-                  // getTimeDifference(userWise[k]["start"], userWise[k]["end"])
-                });
-                $("#tabl").append(rows);
-                // Object.keys(userWise).forEach(function(k,i) {
-                //     // console.log(getTimeDifference(userWise[k]["start"], userWise[k]["end"]));
-                //     console.log(k);
-                // });
-              }else{
-                console.log("No data found.");
-              }
-            },
-            error: function(xhr, status, error) {console.error('Error:', status, error);}
-        });
-        
-      }
-
-      function openTab(evt, tabName) {
-            // Hide all tabs
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(tab => {
-                tab.style.display = 'none';
-            });
-
-            // Remove active class from all buttons
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.classList.remove('active');
-            });
-
-            // Show the selected tab and add active class to the button
-            document.getElementById(tabName).style.display = 'block';
-            evt.currentTarget.classList.add('active');
-        }
-
-        // Set the default open tab
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('.tab-button').click(); // Automatically click the first tab
-        });
-
-        function copyTableToClipboard() {
-            const table = document.getElementById('dateWiseTbl');
-            let tableText = '';
+                <div class="filter-group">
+                    <label>Users:</label>
+                    <div class="user-dropdown">
+                        <div class="user-dropdown-button" onclick="toggleUserDropdown()">
+                            <span id="userDropdownText">Select Users</span>
+                            <span>▼</span>
+                        </div>
+                        <div id="userDropdownContent" class="user-dropdown-content">
+                            <div class="user-option select-all-option">
+                                <input type="checkbox" id="selectAllUsers" onchange="toggleAllUsers()">
+                                <label for="selectAllUsers">Select All</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            // Loop through each row
-            for (let row of table.rows) {
-                let rowText = '';
-                // Loop through each cell in the row
-                for (let cell of row.cells) {
-                    rowText += cell.textContent + '\t'; // Tab between cells
-                }
-                tableText += rowText.trim() + '\n'; // New line between rows
-            }
+            <div class="filter-row">
+                <button onclick="applyFilters()" class="filter-btn">Apply Filters</button>
+                <button onclick="clearFilters()" class="clear-btn">Clear Filters</button>
+            </div>
+            
+            <div id="filterSummary" class="filter-summary" style="display: none;"></div>
+        </div>
+        
+        <div id="status" class="status info">
+            Enter the CSV filename and click "Load CSV File" to display attendance data.
+        </div>
+        
+        <div class="sample-format">
+            <h3>Expected CSV Format (attendance.csv):</h3>
+            UserID,Timestamp<br>
+            401,2024-02-29 14:20:22<br>
+            507,2024-02-29 14:34:04<br>
+            405,2024-02-29 14:35:13<br>
+            408,2024-02-29 14:41:13<br>
+            ...
+        </div>
+        
+        <table id="attendanceTable">
+            <thead>
+                <tr id="headerRow">
+                    <th rowspan="2" class="user-id">User ID</th>
+                </tr>
+                <tr id="subHeaderRow">
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
 
-            // Create a temporary textarea to copy text to clipboard
-            const textarea = document.createElement('textarea');
-            textarea.value = tableText;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
+    <!-- Include Papa Parse library for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <script>
+        let attendanceData = [];
+        let originalData = [];
+        let allUsers = [];
 
-            alert("Table copied to clipboard! You can now paste it into Excel.");
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
         }
 
+        function setLoadingState(loading) {
+            const loadBtn = document.getElementById('loadBtn');
+            const filenameInput = document.getElementById('filename');
+            
+            loadBtn.disabled = loading;
+            filenameInput.disabled = loading;
+            loadBtn.textContent = loading ? 'Loading...' : 'Load CSV File';
+        }
 
+        function initializeYearDropdown() {
+            const yearSelect = document.getElementById('yearFilter');
+            yearSelect.innerHTML = '<option value="">All Years</option>';
+            
+            for (let year = 2024; year <= 2033; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function populateUserDropdown() {
+            const userDropdownContent = document.getElementById('userDropdownContent');
+            
+            // Clear existing user options (keep select all)
+            const selectAllOption = userDropdownContent.querySelector('.select-all-option');
+            userDropdownContent.innerHTML = '';
+            userDropdownContent.appendChild(selectAllOption);
+            
+            // Get unique users and sort them
+            allUsers = [...new Set(originalData.map(record => record.userId))].sort((a, b) => {
+                const numA = parseInt(a);
+                const numB = parseInt(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+            
+            // Add user options
+            allUsers.forEach(userId => {
+                const userOption = document.createElement('div');
+                userOption.className = 'user-option';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `user_${userId}`;
+                checkbox.value = userId;
+                checkbox.checked = true;
+                checkbox.onchange = updateUserDropdownText;
+                
+                const label = document.createElement('label');
+                label.htmlFor = `user_${userId}`;
+                label.textContent = `User ${userId}`;
+                
+                userOption.appendChild(checkbox);
+                userOption.appendChild(label);
+                userDropdownContent.appendChild(userOption);
+            });
+            
+            updateUserDropdownText();
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownContent');
+            dropdown.classList.toggle('show');
+        }
+
+        function toggleAllUsers() {
+            const selectAllCheckbox = document.getElementById('selectAllUsers');
+            const userCheckboxes = document.querySelectorAll('#userDropdownContent input[type="checkbox"]:not(#selectAllUsers)');
+            
+            userCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateUserDropdownText();
+        }
+
+        function updateUserDropdownText() {
+            const userCheckboxes = document.querySelectorAll('#userDropdownContent input[type="checkbox"]:not(#selectAllUsers)');
+            const checkedBoxes = Array.from(userCheckboxes).filter(cb => cb.checked);
+            const selectAllCheckbox = document.getElementById('selectAllUsers');
+            const dropdownText = document.getElementById('userDropdownText');
+            
+            if (checkedBoxes.length === 0) {
+                dropdownText.textContent = 'No users selected';
+                selectAllCheckbox.checked = false;
+            } else if (checkedBoxes.length === userCheckboxes.length) {
+                dropdownText.textContent = 'All users selected';
+                selectAllCheckbox.checked = true;
+            } else {
+                dropdownText.textContent = `${checkedBoxes.length} users selected`;
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        function applyFilters() {
+            const yearFilter = document.getElementById('yearFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+            const selectedUsers = Array.from(document.querySelectorAll('#userDropdownContent input[type="checkbox"]:not(#selectAllUsers):checked'))
+                .map(cb => cb.value);
+            
+            if (selectedUsers.length === 0) {
+                showStatus('Please select at least one user.', 'error');
+                return;
+            }
+            
+            // Filter the data
+            attendanceData = originalData.filter(record => {
+                const date = record.timestamp.split(' ')[0];
+                const [recordYear, recordMonth] = date.split('-');
+                
+                // Apply year filter
+                if (yearFilter && recordYear !== yearFilter) {
+                    return false;
+                }
+                
+                // Apply month filter
+                if (monthFilter && recordMonth !== monthFilter) {
+                    return false;
+                }
+                
+                // Apply user filter
+                if (!selectedUsers.includes(record.userId)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Update filter summary
+            updateFilterSummary(yearFilter, monthFilter, selectedUsers);
+            
+            if (attendanceData.length === 0) {
+                showStatus('No records found for the selected filters.', 'error');
+                document.getElementById('attendanceTable').classList.remove('visible');
+                return;
+            }
+            
+            showStatus(`Showing ${attendanceData.length} filtered records.`, 'success');
+            createTable();
+        }
+
+        function clearFilters() {
+            // Reset all filters
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('monthFilter').value = '';
+            
+            // Select all users
+            const userCheckboxes = document.querySelectorAll('#userDropdownContent input[type="checkbox"]');
+            userCheckboxes.forEach(cb => cb.checked = true);
+            updateUserDropdownText();
+            
+            // Reset data
+            attendanceData = [...originalData];
+            
+            // Hide filter summary
+            document.getElementById('filterSummary').style.display = 'none';
+            
+            showStatus(`Showing all ${attendanceData.length} records.`, 'success');
+            createTable();
+        }
+
+        function updateFilterSummary(year, month, users) {
+            const summary = document.getElementById('filterSummary');
+            let summaryText = 'Filters applied: ';
+            const filters = [];
+            
+            if (year) filters.push(`Year: ${year}`);
+            if (month) {
+                const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+                                 'July', 'August', 'September', 'October', 'November', 'December'];
+                filters.push(`Month: ${monthNames[parseInt(month)]}`);
+            }
+            if (users.length < allUsers.length) {
+                filters.push(`Users: ${users.length} selected`);
+            }
+            
+            if (filters.length === 0) {
+                summary.style.display = 'none';
+            } else {
+                summaryText += filters.join(', ');
+                summary.textContent = summaryText;
+                summary.style.display = 'block';
+            }
+        }
+
+        async function loadLocalCSV() {
+            const filename = document.getElementById('filename').value.trim();
+            
+            if (!filename) {
+                showStatus('Please enter a CSV filename.', 'error');
+                return;
+            }
+            
+            setLoadingState(true);
+            showStatus('Loading CSV file...', 'loading');
+            
+            try {
+                const response = await fetch(filename);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+                }
+                
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: false,
+                    complete: function(results) {
+                        setLoadingState(false);
+                        
+                        if (results.errors.length > 0) {
+                            showStatus('Error parsing CSV: ' + results.errors[0].message, 'error');
+                            return;
+                        }
+                        
+                        if (results.data.length === 0) {
+                            showStatus('CSV file is empty.', 'error');
+                            return;
+                        }
+                        
+                        const headers = Object.keys(results.data[0]);
+                        const requiredHeaders = ['UserID', 'Timestamp'];
+                        const hasRequiredHeaders = requiredHeaders.every(header => 
+                            headers.some(h => h.trim().toLowerCase() === header.toLowerCase())
+                        );
+                        
+                        if (!hasRequiredHeaders) {
+                            showStatus(`CSV must contain UserID and Timestamp columns. Found: ${headers.join(', ')}`, 'error');
+                            return;
+                        }
+                        
+                        const userIdKey = headers.find(h => h.trim().toLowerCase() === 'userid');
+                        const timestampKey = headers.find(h => h.trim().toLowerCase() === 'timestamp');
+                        
+                        originalData = results.data.map(row => ({
+                            userId: row[userIdKey]?.toString().trim(),
+                            timestamp: row[timestampKey]?.toString().trim()
+                        })).filter(row => row.userId && row.timestamp);
+                        
+                        if (originalData.length === 0) {
+                            showStatus('No valid attendance records found in CSV.', 'error');
+                            return;
+                        }
+                        
+                        attendanceData = [...originalData];
+                        
+                        // Show filters and populate dropdowns
+                        document.getElementById('filters').classList.add('visible');
+                        populateUserDropdown();
+                        
+                        showStatus(`Successfully loaded ${originalData.length} attendance records from ${filename}.`, 'success');
+                        createTable();
+                    },
+                    error: function(error) {
+                        setLoadingState(false);
+                        showStatus('Error parsing CSV: ' + error.message, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                setLoadingState(false);
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    showStatus(`File "${filename}" not found. Make sure the file exists in the same directory and you're using a web server.`, 'error');
+                } else {
+                    showStatus('Error loading file: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function processAttendanceData() {
+            const userDateMap = {};
+            const dates = new Set();
+            const users = new Set();
+
+            attendanceData.forEach(record => {
+                let dateTime = record.timestamp.trim();
+                let date, time;
+                
+                if (dateTime.includes(' ')) {
+                    [date, time] = dateTime.split(' ');
+                } else if (dateTime.includes('T')) {
+                    [date, time] = dateTime.split('T');
+                    time = time.split('.')[0];
+                } else {
+                    date = dateTime;
+                    time = '00:00:00';
+                }
+                
+                dates.add(date);
+                users.add(record.userId);
+                
+                if (!userDateMap[record.userId]) {
+                    userDateMap[record.userId] = {};
+                }
+                
+                if (!userDateMap[record.userId][date]) {
+                    userDateMap[record.userId][date] = [];
+                }
+                
+                userDateMap[record.userId][date].push(time);
+            });
+
+            const sortedDates = Array.from(dates).sort();
+            const sortedUsers = Array.from(users).sort((a, b) => {
+                const numA = parseInt(a);
+                const numB = parseInt(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+
+            return { userDateMap, sortedDates, sortedUsers };
+        }
+
+function createTable() {
+    const { userDateMap, sortedDates, sortedUsers } = processAttendanceData();
+
+    const headerRow = document.getElementById('headerRow');
+    const subHeaderRow = document.getElementById('subHeaderRow');
+    const tableBody = document.getElementById('tableBody');
+
+    // Clear existing table headers and body
+    while (headerRow.children.length > 1) {
+        headerRow.removeChild(headerRow.lastChild);
+    }
+    subHeaderRow.innerHTML = '';
+    tableBody.innerHTML = '';
+
+    // Step 1: Compute working days (≥ 4 users present)
+    const workingDays = sortedDates.filter(date => {
+        let count = 0;
+        sortedUsers.forEach(userId => {
+            if (userDateMap[userId]?.[date]) {
+                count++;
+            }
+        });
+        return count >= 4;
+    });
+
+    // Add "Days Served" column header
+    const daysServedTh = document.createElement('th');
+    daysServedTh.rowSpan = 2;
+    daysServedTh.textContent = 'Days Served (Present / Total)';
+    daysServedTh.style.backgroundColor = '#03a9f4';
+    daysServedTh.style.color = 'white';
+    headerRow.appendChild(daysServedTh);
+
+    // Create headers for each date (In, Out, Duration)
+    sortedDates.forEach(date => {
+        const th = document.createElement('th');
+        th.colSpan = 3;
+        th.className = 'date-header';
+        th.textContent = date;
+        headerRow.appendChild(th);
+
+        const inTh = document.createElement('th');
+        inTh.className = 'in-header';
+        inTh.textContent = 'In';
+        subHeaderRow.appendChild(inTh);
+
+        const outTh = document.createElement('th');
+        outTh.className = 'out-header';
+        outTh.textContent = 'Out';
+        subHeaderRow.appendChild(outTh);
+
+        const durationTh = document.createElement('th');
+        durationTh.className = 'duration-header';
+        durationTh.textContent = 'Duration';
+        subHeaderRow.appendChild(durationTh);
+    });
+
+    // Create table rows for each user
+    sortedUsers.forEach(userId => {
+        const row = document.createElement('tr');
+
+        // User ID cell
+        const userCell = document.createElement('td');
+        userCell.className = 'user-id';
+        userCell.textContent = userId;
+        row.appendChild(userCell);
+
+        // Calculate present days
+        let presentDays = 0;
+        workingDays.forEach(date => {
+            if (userDateMap[userId]?.[date]?.length) {
+                presentDays++;
+            }
+        });
+
+        // Add Days Served cell
+        const servedCell = document.createElement('td');
+        servedCell.textContent = `${presentDays} / ${workingDays.length}`;
+        servedCell.style.backgroundColor = '#e1f5fe';
+        servedCell.style.textAlign = 'center';
+        servedCell.style.fontWeight = 'bold';
+        row.appendChild(servedCell);
+
+        // Add per-date attendance (In, Out, Duration)
+        sortedDates.forEach(date => {
+            const userTimes = userDateMap[userId] && userDateMap[userId][date]
+                ? userDateMap[userId][date].sort()
+                : [];
+
+            let inTime = '-';
+            let outTime = '-';
+            let duration = '-';
+            let totalMinutes = 0;
+
+            if (userTimes.length > 0) {
+                const [h, m] = userTimes[0].split(':');
+                inTime = `${h}:${m}`;
+            }
+
+            if (userTimes.length > 1) {
+                const [h1, m1] = userTimes[0].split(':').map(Number);
+                const [h2, m2] = userTimes[userTimes.length - 1].split(':').map(Number);
+                outTime = `${h2.toString().padStart(2, '0')}:${m2.toString().padStart(2, '0')}`;
+
+                totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+                if (totalMinutes < 0) totalMinutes = 0;
+
+                const hours = Math.floor(totalMinutes / 60);
+                const mins = totalMinutes % 60;
+                duration = `${hours}h ${mins}m`;
+            }
+
+            const inCell = document.createElement('td');
+            inCell.textContent = inTime;
+            inCell.className = inTime !== '-' ? 'in-time' : 'empty-cell';
+            row.appendChild(inCell);
+
+            const outCell = document.createElement('td');
+            outCell.textContent = outTime;
+            outCell.className = outTime !== '-' ? 'out-time' : 'empty-cell';
+            row.appendChild(outCell);
+
+            const durationCell = document.createElement('td');
+            durationCell.textContent = duration;
+            if (duration !== '-') {
+                durationCell.className = 'duration-time';
+                if (totalMinutes < 480) {
+                    durationCell.classList.add('short-duration');
+                }
+            } else {
+                durationCell.className = 'empty-cell';
+            }
+            row.appendChild(durationCell);
+        });
+
+        tableBody.appendChild(row);
+    });
+
+    document.getElementById('attendanceTable').classList.add('visible');
+}
+
+
+
+        // Initialize and event handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeYearDropdown();
+            
+            const filenameInput = document.getElementById('filename');
+            filenameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadLocalCSV();
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.user-dropdown')) {
+                    document.getElementById('userDropdownContent').classList.remove('show');
+                }
+            });
+        });
     </script>
-
-
-
 </body>
 </html>
