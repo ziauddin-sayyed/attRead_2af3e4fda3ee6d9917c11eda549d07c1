@@ -340,11 +340,76 @@
 
     </style>
 </head>
+<script>
+
+var users = {
+  "401": {"name": "Shamran"},
+  "404": {"name": "Khalid"},
+  "405": {"name": "Tanveer"},
+  "319": {"name": "Naved"},
+  "311": {"name": "Mohammedaadil"},
+  "310": {"name": "Mohdtanzeem"},
+  "309": {"name": "Khalilullah"},
+  "316": {"name": "Mujeeb"},
+  "306": {"name": "Shahnawaz"},
+  "312": {"name": "Shakeel"},
+  "328": {"name": "Wasif"},
+  "314": {"name": "Mujahid"},
+  "327": {"name": "lateef"},
+  "326": {"name": "Shafi"},
+  "317": {"name": "Iqbal"},
+  "504": {"name": "Faizan"},
+  "318": {"name": "Mehjabeen"},
+  "5": {"name": "Irfan"},
+  "320": {"name": "Shakirkhan"},
+  "315": {"name": "Javed"},
+  "410": {"name": "Navin"},
+  "313": {"name": "Abdulgaffar"},
+  "307": {"name": "Nadeem"},
+  "308": {"name": "Ayyubkhan"},
+  "402": {"name": "Masum"},
+  "406": {"name": "Imran"},
+  "407": {"name": "Jagat"},
+  "510": {"name": "NN-510"},
+  "512": {"name": "Salim"},
+  "511": {"name": "Adiba"},
+  "408": {"name": "Prasand"},
+  "207": {"name": "Shahalam"},
+  "206": {"name": "Izhaar"},
+  "204": {"name": "Anwarulhaque"},
+  "205": {"name": "Jamil"},
+  "506": {"name": "Nadeem"},
+  "507": {"name": "Zakir"},
+  "508": {"name": "Awais"},
+  "503": {"name": "Khansa"},
+  "106": {"name": "Jasmin"},
+  "514": {"name": "Ashfaque"},
+  "101": {"name": "Fauzia"},
+  "210": {"name": "Rizwana"},
+  "208": {"name": "Athar"},
+  "209": {"name": "Saqib"},
+  "213": {"name": "Jahida"},
+  "214": {"name": "Saeedunnisa"},
+  "211": {"name": "Kayas"},
+  "102": {"name": "Mujahid", "card": "1967"},
+  "212": {"name": "Atiq"},
+  "103": {"name": "Altaf"},
+  "220": {"name": "Varsha"},
+  "516": {"name": "Raaes"},
+  "215": {"name": "Akbar"},
+  "216": {"name": "Ayman"},
+  "1": {"name": "NN-1"}
+}
+
+
+
+</script>
+
 <body>
     <div class="container">
         <h1>Employee Attendance Tracking</h1>
         
-        <div class="instructions">
+        <!-- <div class="instructions">
             <h3>Setup Instructions:</h3>
             <ol>
                 <li>Place your CSV file in the same directory as this HTML file</li>
@@ -358,11 +423,11 @@
                 </li>
                 <li>Open <code>http://localhost:8000</code> in your browser</li>
             </ol>
-        </div>
+        </div> -->
         
         <div class="file-controls">
             <input type="text" id="filename" class="file-input" placeholder="Enter CSV filename (e.g., attendance.csv)" value="attendance.csv" />
-            <button onclick="loadLocalCSV()" class="load-btn" id="loadBtn">Load CSV File</button>
+            <button onclick="loadLocalCSV()" class="load-btn" id="loadBtn">Load Data</button>
         </div>
         
         <div id="filters" class="filters">
@@ -423,7 +488,7 @@
             Enter the CSV filename and click "Load CSV File" to display attendance data.
         </div>
         
-        <div class="sample-format">
+        <!-- <div class="sample-format">
             <h3>Expected CSV Format (attendance.csv):</h3>
             UserID,Timestamp<br>
             401,2024-02-29 14:20:22<br>
@@ -431,7 +496,7 @@
             405,2024-02-29 14:35:13<br>
             408,2024-02-29 14:41:13<br>
             ...
-        </div>
+        </div> -->
         
         <table id="attendanceTable">
             <thead>
@@ -513,7 +578,8 @@
                 
                 const label = document.createElement('label');
                 label.htmlFor = `user_${userId}`;
-                label.textContent = `User ${userId}`;
+                // label.textContent = `User ${userId}`;
+                label.textContent = users[userId].name +"-"+ userId;
                 
                 userOption.appendChild(checkbox);
                 userOption.appendChild(label);
@@ -844,7 +910,8 @@ function createTable() {
         // User ID cell
         const userCell = document.createElement('td');
         userCell.className = 'user-id';
-        userCell.textContent = userId;
+        // userCell.textContent = userId;
+        userCell.textContent = users[userId].name+" - "+userId ;
         row.appendChild(userCell);
 
         // Calculate present days
