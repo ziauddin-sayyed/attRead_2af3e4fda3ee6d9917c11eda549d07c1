@@ -382,6 +382,22 @@
             justify-content: space-between;
             align-items: center;
         }
+
+          @media print {
+            @page {
+                margin: 1mm 3mm 1mm 1mm;
+            }
+
+            body {
+                margin: 0; /* Avoid double margin */
+            }
+            .icard{
+                margin: 1mm ;
+                padding: 1mm;
+            }
+          }
+
+        
     </style>
 </head>
 <body>
@@ -471,8 +487,8 @@
                             <div>
                                 <label>Width</label>
                                 <div class="slider-group">
-                                    <input type="range" id="cardWidth" class="slider" min="50" max="150" value="86">
-                                    <span id="cardWidthValue" class="slider-value">86mm</span>
+                                    <input type="range" id="cardWidth" class="slider" min="50" max="150" value="84">
+                                    <span id="cardWidthValue" class="slider-value">84mm</span>
                                 </div>
                             </div>
                             <div>
@@ -1013,11 +1029,20 @@
         }
         
         function printCards() {
-            if (document.getElementById('cardPreview').children.length === 0) {
-                showStatus('Generate cards first before printing.', 'error');
-                return;
-            }
+            const divContents = document.getElementById("cardPreview").innerHTML;
+            const originalContents = document.body.innerHTML;
+
+            document.body.innerHTML = divContents;
             window.print();
+            document.body.innerHTML = originalContents;
+
+
+            //if (document.getElem
+            // entById('cardPreview').children.length === 0) {
+            //    showStatus('Generate cards first before printing.', 'error');
+            //    return;
+            //}
+            //window.print();
         }
         
         async function exportCards() {
