@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Card Generator</title>
+    <!-- Add jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .preview-panel {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #495057;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .file-upload-label:hover {
+            background: #e6ebff;
+            border-color: #5a67d8;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .slider-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider-value {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .icard {
+            width: 86mm;
+            height: 56mm;
+            border: 1px solid #ccc;
+            margin: 10px;
+            padding: 3px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            font-size: 8px;
+            display: inline-block;
+        }
+        
+        .icard-content {
+            display: flex;
+            height: 100%;
+        }
+        
+        .student-image-section {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .student-image {
+            border: 1px solid #32284b;
+            margin-bottom: 5px;
+        }
+        
+        .principal-signature {
+            margin-top: 5px;
+            margin-bottom: 2px;
+        }
+        
+        .info-section {
+            width: 75%;
+            padding: 5px;
+            font-size: 7px;
+        }
+        
+        .student-name {
+            font-weight: bold;
+            font-size: 9px;
+            margin-bottom: 5px;
+        }
+        
+        .info-row {
+            margin-bottom: 3px;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .class-mapping {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .mapping-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .mapping-item select,
+        .mapping-item input {
+            flex: 1;
+        }
+        
+        @media print {
+            body { background: white; }
+            .control-panel { display: none; }
+            .main-content { grid-template-columns: 1fr; }
+            .icard { 
+                page-break-inside: avoid;
+                margin: 2mm;
+            }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .position-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .position-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .font-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .toggle-controls {
+            margin-top: 10px;
+        }
+        
+        .toggle-btn {
+            padding: 5px 10px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .element-controls {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .element-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Masoom Sir's ID Card Generator</h1>
+            <p>Create professional student ID cards with ease</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="control-panel">
+                <!-- CSV Upload Section -->
+                <div class="section">
+                    <div class="section-title">
+                        📊 Student Data (CSV)
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Upload Student Data CSV</label>
+                        <div class="file-upload">
+                            <input type="file" id="csvFile" accept=".csv" />
+                            <label for="csvFile" class="file-upload-label">
+                                📁 Choose CSV File
+                            </label>
+                        </div>
+                        <small style="color: #6c757d; margin-top: 5px; display: block;">
+                            Expected format: Roll No, GR No, Name, Std, Div, DOB, Address, Contact No, Academic Year
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Images Upload Section -->
+                <div class="section">
+                    <div class="section-title">
+                        🖼️ Images
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Student Photos (Multiple)</label>
+                        <div class="file-upload">
+                            <input type="file" id="studentPhotos" multiple accept="image/*" />
+                            <label for="studentPhotos" class="file-upload-label">
+                                📷 Choose Student Photos
+                            </label>
+                        </div>
+                        <small style="color: #6c757d;">Name files as GR_Number.jpg (e.g., 1001.jpg)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Principal Signature</label>
+                        <div class="file-upload">
+                            <input type="file" id="principalSig" accept="image/*" />
+                            <label for="principalSig" class="file-upload-label">
+                                ✍️ Choose Signature
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Background Images</label>
+                        <div class="file-upload">
+                            <input type="file" id="backgroundImages" multiple accept="image/*" />
+                            <label for="backgroundImages" class="file-upload-label">
+                                🎨 Choose Backgrounds
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Class-Background Mapping -->
+                <div class="section">
+                    <div class="section-title">
+                        🎯 Class Background Mapping
+                    </div>
+                    <div id="classMappings" class="class-mapping">
+                        <p>Upload CSV and background images to configure mappings</p>
+                    </div>
+                </div>
+                
+                <!-- Size & Position Controls -->
+                <div class="section">
+                    <div class="section-title">
+                        📐 Size & Position Controls
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">ID Card Size (mm)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label>Width</label>
+                                <div class="slider-group">
+                                    <input type="range" id="cardWidth" class="slider" min="50" max="150" value="86">
+                                    <span id="cardWidthValue" class="slider-value">86mm</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label>Height</label>
+                                <div class="slider-group">
+                                    <input type="range" id="cardHeight" class="slider" min="30" max="100" value="56">
+                                    <span id="cardHeightValue" class="slider-value">56mm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Student Photo Controls -->
+                    <div class="element-controls">
+                        <div class="element-title">
+                            <span>👤 Student Photo</span>
+                            <div class="toggle-controls">
+                                <button class="toggle-btn active" onclick="toggleElementControls('studentPhoto')">Show</button>
+                            </div>
+                        </div>
+                        <div id="studentPhotoControls">
+                            <div class="form-group">
+                                <label class="form-label">Student Photo Size</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label>Width (%)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="studentPhotoWidth" class="slider" min="10" max="50" value="25">
+                                            <span id="studentPhotoWidthValue" class="slider-value">25%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Height (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="studentPhotoHeight" class="slider" min="30" max="100" value="60">
+                                            <span id="studentPhotoHeightValue" class="slider-value">60px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Student Photo Position</label>
+                                <div class="position-controls">
+                                    <div class="position-group">
+                                        <label>Top (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="studentPhotoTop" class="slider" min="-100" max="100" value="0">
+                                            <span id="studentPhotoTopValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Left (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="studentPhotoLeft" class="slider" min="-100" max="100" value="0">
+                                            <span id="studentPhotoLeftValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Principal Signature Controls -->
+                    <div class="element-controls">
+                        <div class="element-title">
+                            <span>✍️ Principal Signature</span>
+                            <div class="toggle-controls">
+                                <button class="toggle-btn active" onclick="toggleElementControls('principalSig')">Show</button>
+                            </div>
+                        </div>
+                        <div id="principalSigControls">
+                            <div class="form-group">
+                                <label class="form-label">Principal Signature Size</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label>Width (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sigWidth" class="slider" min="50" max="150" value="89">
+                                            <span id="sigWidthValue" class="slider-value">89px</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Height (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sigHeight" class="slider" min="30" max="80" value="45">
+                                            <span id="sigHeightValue" class="slider-value">45px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Signature Position</label>
+                                <div class="position-controls">
+                                    <div class="position-group">
+                                        <label>Top (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sigTop" class="slider" min="-100" max="100" value="0">
+                                            <span id="sigTopValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Left (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sigLeft" class="slider" min="-100" max="100" value="0">
+                                            <span id="sigLeftValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Text Content Controls -->
+                    <div class="element-controls">
+                        <div class="element-title">
+                            <span>📝 Text Content</span>
+                            <div class="toggle-controls">
+                                <button class="toggle-btn active" onclick="toggleElementControls('textContent')">Show</button>
+                            </div>
+                        </div>
+                        <div id="textContentControls">
+                            <div class="form-group">
+                                <label class="form-label">Font Sizes</label>
+                                <div class="font-controls">
+                                    <div class="position-group">
+                                        <label>Name Font Size (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="nameFontSize" class="slider" min="6" max="16" value="9">
+                                            <span id="nameFontSizeValue" class="slider-value">9px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Info Font Size (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="infoFontSize" class="slider" min="5" max="12" value="7">
+                                            <span id="infoFontSizeValue" class="slider-value">7px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Section Font Size (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sectionFontSize" class="slider" min="5" max="15" value="8">
+                                            <span id="sectionFontSizeValue" class="slider-value">8px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Principal Text Size (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="principalTextSize" class="slider" min="5" max="12" value="7">
+                                            <span id="principalTextSizeValue" class="slider-value">7px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Text Position</label>
+                                <div class="position-controls">
+                                    <div class="position-group">
+                                        <label>Info Top (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="textTop" class="slider" min="-100" max="100" value="0">
+                                            <span id="textTopValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Info Left (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="textLeft" class="slider" min="-100" max="100" value="0">
+                                            <span id="textLeftValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Section Top (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sectionTop" class="slider" min="-100" max="100" value="0">
+                                            <span id="sectionTopValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Section Left (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="sectionLeft" class="slider" min="-100" max="100" value="0">
+                                            <span id="sectionLeftValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Principal Text Top (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="principalTextTop" class="slider" min="-100" max="100" value="0">
+                                            <span id="principalTextTopValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                    <div class="position-group">
+                                        <label>Principal Text Left (px)</label>
+                                        <div class="slider-group">
+                                            <input type="range" id="principalTextLeft" class="slider" min="-100" max="100" value="0">
+                                            <span id="principalTextLeftValue" class="slider-value">0px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="section">
+                    <div class="section-title">
+                        ⚡ Actions
+                    </div>
+                    <div style="display: grid; gap: 10px;">
+                        <button class="btn btn-primary" onclick="generateCards()">
+                            🔄 Generate ID Cards
+                        </button>
+                        <button class="btn btn-success" onclick="printCards()">
+                            🖨️ Print Cards
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportCards()">
+                            💾 Export as PDF
+                        </button>
+                    </div>
+                    <div id="progressBar" class="progress-bar" style="display: none;">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <div class="section-title">
+                    👀 Preview
+                </div>
+                <div id="statusMessage" class="status-message"></div>
+                <div id="cardPreview">
+                    <p style="text-align: center; color: #6c757d; margin-top: 50px;">
+                        Upload CSV data and images to see preview
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let studentData = [];
+        let studentPhotos = {};
+        let principalSignature = null;
+        let backgroundImages = {};
+        let classBackgroundMapping = {};
+        
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            setupSliders();
+        });
+        
+        function setupEventListeners() {
+            document.getElementById('csvFile').addEventListener('change', handleCSVUpload);
+            document.getElementById('studentPhotos').addEventListener('change', handleStudentPhotos);
+            document.getElementById('principalSig').addEventListener('change', handlePrincipalSignature);
+            document.getElementById('backgroundImages').addEventListener('change', handleBackgroundImages);
+        }
+        
+        function setupSliders() {
+            const sliders = [
+                'cardWidth', 'cardHeight', 
+                'studentPhotoWidth', 'studentPhotoHeight', 'studentPhotoTop', 'studentPhotoLeft',
+                'sigWidth', 'sigHeight', 'sigTop', 'sigLeft',
+                'nameFontSize', 'infoFontSize', 'sectionFontSize', 'principalTextSize',
+                'textTop', 'textLeft', 'sectionTop', 'sectionLeft', 'principalTextTop', 'principalTextLeft'
+            ];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueSpan = document.getElementById(sliderId + 'Value');
+                if (slider && valueSpan) {
+                    // Set initial value
+                    let unit = 'px';
+                    if (sliderId.includes('card')) unit = 'mm';
+                    if (sliderId.includes('Width') && sliderId.includes('studentPhoto')) unit = '%';
+                    
+                    valueSpan.textContent = slider.value + unit;
+                    
+                    slider.addEventListener('input', function() {
+                        valueSpan.textContent = this.value + unit;
+                        if (studentData.length > 0) {
+                            generateCards();
+                        }
+                    });
+                }
+            });
+        }
+        
+        function toggleElementControls(element) {
+            const controls = document.getElementById(element + 'Controls');
+            const btn = event.target;
+            
+            if (controls.style.display === 'none') {
+                controls.style.display = 'block';
+                btn.textContent = 'Hide';
+                btn.classList.add('active');
+            } else {
+                controls.style.display = 'none';
+                btn.textContent = 'Show';
+                btn.classList.remove('active');
+            }
+        }
+        
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                studentData = parseCSV(csv);
+                showStatus('CSV uploaded successfully. ' + studentData.length + ' students found.', 'success');
+                createClassMappingUI();
+                if (Object.keys(studentPhotos).length > 0) {
+                    generateCards();
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const data = [];
+            for (let i = 1; i < lines.length; i++) { // Skip header
+                const line = lines[i].trim();
+                if (line) {
+                    const columns = line.split(',');
+                    if (columns.length >= 8) {
+                        data.push({
+                            rollNo: columns[0]?.trim(),
+                            grNo: columns[1]?.trim(),
+                            name: columns[2]?.trim(),
+                            std: columns[3]?.trim(),
+                            div: columns[4]?.trim(),
+                            dob: columns[5]?.trim(),
+                            address: columns[6]?.trim(),
+                            contact: columns[7]?.trim(),
+                            academicYear: columns[8]?.trim() || '2023-2024' // Default academic year
+                        });
+                    }
+                }
+            }
+            return data;
+        }
+        
+        function handleStudentPhotos(event) {
+            const files = event.target.files;
+            studentPhotos = {};
+            let processed = 0;
+            
+            if (files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                const grNumber = file.name.split('.')[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    studentPhotos[grNumber] = e.target.result;
+                    processed++;
+                    if (processed === files.length) {
+                        showStatus(`${processed} student photos uploaded successfully.`, 'success');
+                        if (studentData.length > 0) {
+                            generateCards();
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function handlePrincipalSignature(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                principalSignature = e.target.result;
+                showStatus('Principal signature uploaded successfully.', 'success');
+                if (studentData.length > 0) {
+                    generateCards();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function handleBackgroundImages(event) {
+            const files = event.target.files;
+            backgroundImages = {};
+            let processed = 0;
+            
+            if (files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                const imageName = file.name.split('.')[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    backgroundImages[imageName] = e.target.result;
+                    processed++;
+                    if (processed === files.length) {
+                        showStatus(`${processed} background images uploaded successfully.`, 'success');
+                        createClassMappingUI();
+                        if (studentData.length > 0) {
+                            generateCards();
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function createClassMappingUI() {
+            const mappingDiv = document.getElementById('classMappings');
+            if (studentData.length === 0 || Object.keys(backgroundImages).length === 0) {
+                mappingDiv.innerHTML = '<p>Upload CSV and background images to configure mappings</p>';
+                return;
+            }
+            
+            const uniqueClasses = [...new Set(studentData.map(s => s.std))].sort();
+            const backgroundNames = Object.keys(backgroundImages);
+            
+            let html = '';
+            uniqueClasses.forEach(className => {
+                html += `
+                    <div class="mapping-item">
+                        <label style="min-width: 80px;">Class ${className}:</label>
+                        <select id="mapping_${className}" onchange="updateClassMapping('${className}', this.value)">
+                            <option value="">Select Background</option>
+                            ${backgroundNames.map(bg => `<option value="${bg}">${bg}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            });
+            mappingDiv.innerHTML = html;
+        }
+        
+        function updateClassMapping(className, backgroundName) {
+            classBackgroundMapping[className] = backgroundName;
+            if (studentData.length > 0) {
+                generateCards();
+            }
+        }
+        
+        function generateCards() {
+            if (studentData.length === 0) {
+                showStatus('Please upload CSV data first.', 'error');
+                return;
+            }
+            
+            const preview = document.getElementById('cardPreview');
+            const cardWidth = document.getElementById('cardWidth').value;
+            const cardHeight = document.getElementById('cardHeight').value;
+            const photoWidth = document.getElementById('studentPhotoWidth').value;
+            const photoHeight = document.getElementById('studentPhotoHeight').value;
+            const photoTop = document.getElementById('studentPhotoTop').value;
+            const photoLeft = document.getElementById('studentPhotoLeft').value;
+            const sigWidth = document.getElementById('sigWidth').value;
+            const sigHeight = document.getElementById('sigHeight').value;
+            const sigTop = document.getElementById('sigTop').value;
+            const sigLeft = document.getElementById('sigLeft').value;
+            const nameFontSize = document.getElementById('nameFontSize').value;
+            const infoFontSize = document.getElementById('infoFontSize').value;
+            const sectionFontSize = document.getElementById('sectionFontSize').value;
+            const principalTextSize = document.getElementById('principalTextSize').value;
+            const textTop = document.getElementById('textTop').value;
+            const textLeft = document.getElementById('textLeft').value;
+            const sectionTop = document.getElementById('sectionTop').value;
+            const sectionLeft = document.getElementById('sectionLeft').value;
+            const principalTextTop = document.getElementById('principalTextTop').value;
+            const principalTextLeft = document.getElementById('principalTextLeft').value;
+            
+            let html = '';
+            
+            studentData.forEach((student, index) => {
+                const backgroundImage = classBackgroundMapping[student.std] ? 
+                    backgroundImages[classBackgroundMapping[student.std]] : '';
+                const studentPhoto = studentPhotos[student.grNo] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiNjY2MiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCA1LjctNC4yMSA0YTQuMDEgMHptMiA5djFIOGMuOC0yLjIgMy0zIDUtM3oiLz48L3N2Zz4=';
+                
+                const section = getSection(student.std);
+                
+                html += `
+                    <div class="icard" style="width: ${cardWidth}mm; height: ${cardHeight}mm; 
+                         background-image: url('${backgroundImage}');">
+                        <div class="icard-content">
+                            <div class="student-image-section" style="width: ${photoWidth}%; position: relative; top: ${photoTop}px; left: ${photoLeft}px;">
+                                <div style="text-align: center; font-size: ${sectionFontSize}px; margin-bottom: 5px; position: relative; top: ${sectionTop}px; left: ${sectionLeft}px;">
+                                    ${section}
+                                </div>
+                                <img class="student-image" src="${studentPhoto}" 
+                                     style="height: ${photoHeight}px; width: auto;" alt="Student Photo">
+                                ${principalSignature ? `
+                                    <img class="principal-signature" src="${principalSignature}" 
+                                         style="width: ${sigWidth}px; height: ${sigHeight}px; position: relative; top: ${sigTop}px; left: ${sigLeft}px;" alt="Principal">
+                                    <div style="font-size: ${principalTextSize}px; position: relative; top: ${principalTextTop}px; left: ${principalTextLeft}px;">Principal</div>
+                                ` : ''}
+                            </div>
+                            <div class="info-section" style="position: relative; top: ${textTop}px; left: ${textLeft}px;">
+                                <div class="student-name" style="font-size: ${nameFontSize}px;">${student.name}</div>
+                                <div class="info-row" style="font-size: ${infoFontSize}px;">
+                                    <strong>Std:</strong> ${student.std} 
+                                    <strong>Div:</strong> ${student.div}
+                                </div>
+                                <div class="info-row" style="font-size: ${infoFontSize}px;">
+                                    <strong>G.R.No:</strong> ${student.grNo}
+                                    <strong>D.O.B:</strong> ${student.dob}
+                                </div>
+                                <div class="info-row" style="font-size: ${infoFontSize}px;">
+                                    <strong>Address:</strong> ${student.address}
+                                </div>
+                                <div class="info-row" style="font-size: ${infoFontSize}px;">
+                                    <strong>Contact No:</strong> ${student.contact}
+                                </div>
+                                <div class="info-row" style="font-size: ${infoFontSize}px;">
+                                    <strong>Academic Year:</strong> ${student.academicYear}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            preview.innerHTML = html;
+            showStatus(`Generated ${studentData.length} ID cards successfully.`, 'success');
+        }
+        
+        function getSection(std) {
+            const pri = ['I', 'II', 'III', 'IV'];
+            const sec = ['V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            
+            if (pri.includes(std)) return 'Primary';
+            if (sec.includes(std)) return 'Secondary';
+            return 'Pre-Primary';
+        }
+        
+        function printCards() {
+            if (document.getElementById('cardPreview').children.length === 0) {
+                showStatus('Generate cards first before printing.', 'error');
+                return;
+            }
+            window.print();
+        }
+        
+        async function exportCards() {
+            if (document.getElementById('cardPreview').children.length === 0) {
+                showStatus('Generate cards first before exporting.', 'error');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: [document.getElementById('cardWidth').value, document.getElementById('cardHeight').value]
+            });
+            
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = progressBar.querySelector('.progress-fill');
+            progressBar.style.display = 'block';
+            
+            const cards = document.querySelectorAll('.icard');
+            const totalCards = cards.length;
+            
+            for (let i = 0; i < totalCards; i++) {
+                try {
+                    const card = cards[i];
+                    const canvas = await html2canvas(card, {
+                        scale: 3, // Higher scale for better quality
+                        useCORS: true,
+                        logging: false
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    if (i > 0) {
+                        doc.addPage();
+                    }
+                    
+                    doc.addImage(imgData, 'JPEG', 0, 0, 
+                        document.getElementById('cardWidth').value, 
+                        document.getElementById('cardHeight').value);
+                    
+                    // Update progress
+                    progressFill.style.width = `${((i + 1) / totalCards) * 100}%`;
+                } catch (error) {
+                    console.error('Error generating card:', error);
+                    showStatus('Error generating PDF. Please try again.', 'error');
+                    progressBar.style.display = 'none';
+                    return;
+                }
+            }
+            
+            doc.save('student-id-cards.pdf');
+            progressBar.style.display = 'none';
+            showStatus('PDF exported successfully!', 'success');
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
