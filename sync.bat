@@ -5,7 +5,7 @@ setlocal
 set SCRIPT_DIR=%~dp0
 set PYTHON_EXE=%SCRIPT_DIR%python-3.9\python.exe
 @REM set GIT_EXE=%SCRIPT_DIR%\PortableGit\bin\git.exe
-set GIT_EXE=%SCRIPT_DIR%git.exe
+set GIT_EXE=%SCRIPT_DIR%PortableGit\bin\git.exe
 set PY_SCRIPT=sync.py
 
 :: Retry loop for Python script
@@ -20,7 +20,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo Python script executed successfully.
 
-:: Git operations
 echo Adding changes...
 "%GIT_EXE%" add .
 
@@ -32,3 +31,9 @@ echo Pushing to remote...
 
 echo All done.
 endlocal
+
+
+echo ========================================
+echo All done. Press any key to exit...
+pause >nul
+
