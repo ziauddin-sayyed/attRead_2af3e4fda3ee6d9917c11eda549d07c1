@@ -16,11 +16,11 @@ try:
     filename = "attendance.csv"
 
     with open(filename, "w") as f:
-        f.write("User ID\tTimestamp\n")
+        f.write("User ID,Timestamp\n")
         for record in attendance:
             # record.timestamp is a datetime object; convert to string
             timestamp_str = record.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-            line = "{}\t{}\n".format(record.user_id, timestamp_str)
+            line = "{},{}\n".format(record.user_id, timestamp_str)
             f.write(line)
 
     print("Attendance data saved to {}".format(filename))
