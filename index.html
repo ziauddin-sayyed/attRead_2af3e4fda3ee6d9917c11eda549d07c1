@@ -338,6 +338,18 @@
             font-weight: bold;
         }
 
+
+        @media print {
+
+            #filters,.file-controls,h1 {
+                display: none;
+            }
+            .container{
+                padding: 0;
+            }
+
+        }
+        
     </style>
 </head>
 <script>
@@ -874,7 +886,7 @@ function createTable() {
     // Add "Days Served" column header
     const daysServedTh = document.createElement('th');
     daysServedTh.rowSpan = 2;
-    daysServedTh.textContent = 'Days Served (Present / Total)';
+    daysServedTh.textContent = 'Total';
     daysServedTh.style.backgroundColor = '#03a9f4';
     daysServedTh.style.color = 'white';
     headerRow.appendChild(daysServedTh);
@@ -882,7 +894,7 @@ function createTable() {
     // Create headers for each date (In, Out, Duration)
     sortedDates.forEach(date => {
         const th = document.createElement('th');
-        th.colSpan = 3;
+        th.colSpan = 2;
         th.className = 'date-header';
         th.textContent = date;
         headerRow.appendChild(th);
@@ -897,10 +909,10 @@ function createTable() {
         outTh.textContent = 'Out';
         subHeaderRow.appendChild(outTh);
 
-        const durationTh = document.createElement('th');
-        durationTh.className = 'duration-header';
-        durationTh.textContent = 'Duration';
-        subHeaderRow.appendChild(durationTh);
+        // const durationTh = document.createElement('th');
+        // durationTh.className = 'duration-header';
+        // durationTh.textContent = 'Duration';
+        // subHeaderRow.appendChild(durationTh);
     });
 
     // Create table rows for each user
@@ -969,17 +981,17 @@ function createTable() {
             outCell.className = outTime !== '-' ? 'out-time' : 'empty-cell';
             row.appendChild(outCell);
 
-            const durationCell = document.createElement('td');
-            durationCell.textContent = duration;
-            if (duration !== '-') {
-                durationCell.className = 'duration-time';
-                if (totalMinutes < 480) {
-                    durationCell.classList.add('short-duration');
-                }
-            } else {
-                durationCell.className = 'empty-cell';
-            }
-            row.appendChild(durationCell);
+            // const durationCell = document.createElement('td');
+            // durationCell.textContent = duration;
+            // if (duration !== '-') {
+            //     durationCell.className = 'duration-time';
+            //     if (totalMinutes < 480) {
+            //         durationCell.classList.add('short-duration');
+            //     }
+            // } else {
+            //     durationCell.className = 'empty-cell';
+            // }
+            // row.appendChild(durationCell);
         });
 
         tableBody.appendChild(row);
