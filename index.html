@@ -489,6 +489,18 @@ var users = {
             </div>
             
             <div class="filter-row">
+                <div class="filter-group">
+                    <label for="dateFrom">From:</label>
+                    <input type="date" id="dateFrom" class="filter-select">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="dateTo">To:</label>
+                    <input type="date" id="dateTo" class="filter-select">
+                </div>
+            </div>
+            
+            <div class="filter-row">
                 <button onclick="applyFilters()" class="filter-btn">Apply Filters</button>
                 <button onclick="clearFilters()" class="clear-btn">Clear Filters</button>
             </div>
@@ -638,11 +650,23 @@ var users = {
         function applyFilters() {
             const yearFilter = document.getElementById('yearFilter').value;
             const monthFilter = document.getElementById('monthFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
             const selectedUsers = Array.from(document.querySelectorAll('#userDropdownContent input[type="checkbox"]:not(#selectAllUsers):checked'))
                 .map(cb => cb.value);
             
+            if (!yearFilter && !monthFilter && !dateFrom && !dateTo) {
+                showStatus('Please select a Year, Month, or a date range to render the table.', 'error');
+                return;
+            }
+            
             if (selectedUsers.length === 0) {
                 showStatus('Please select at least one user.', 'error');
+                return;
+            }
+            
+            if (dateFrom && dateTo && dateFrom > dateTo) {
+                showStatus('"From" date cannot be after "To" date.', 'error');
                 return;
             }
             
@@ -650,6 +674,14 @@ var users = {
             attendanceData = originalData.filter(record => {
                 const date = record.timestamp.split(' ')[0];
                 const [recordYear, recordMonth] = date.split('-');
+                
+                // Apply date range filter
+                if (dateFrom && date < dateFrom) {
+                    return false;
+                }
+                if (dateTo && date > dateTo) {
+                    return false;
+                }
                 
                 // Apply year filter
                 if (yearFilter && recordYear !== yearFilter) {
@@ -670,7 +702,7 @@ var users = {
             });
             
             // Update filter summary
-            updateFilterSummary(yearFilter, monthFilter, selectedUsers);
+            updateFilterSummary(yearFilter, monthFilter, dateFrom, dateTo, selectedUsers);
             
             if (attendanceData.length === 0) {
                 showStatus('No records found for the selected filters.', 'error');
@@ -686,6 +718,8 @@ var users = {
             // Reset all filters
             document.getElementById('yearFilter').value = '';
             document.getElementById('monthFilter').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
             
             // Select all users
             const userCheckboxes = document.querySelectorAll('#userDropdownContent input[type="checkbox"]');
@@ -698,15 +732,24 @@ var users = {
             // Hide filter summary
             document.getElementById('filterSummary').style.display = 'none';
             
-            showStatus(`Showing all ${attendanceData.length} records.`, 'success');
-            createTable();
+            // Hide the table - full data should not be rendered
+            document.getElementById('attendanceTable').classList.remove('visible');
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('subHeaderRow').innerHTML = '';
+            while (document.getElementById('headerRow').children.length > 1) {
+                document.getElementById('headerRow').removeChild(document.getElementById('headerRow').lastChild);
+            }
+            
+            showStatus('Filters cleared. Select a Year, Month, or date range and click "Apply Filters" to render the table.', 'info');
         }
 
-        function updateFilterSummary(year, month, users) {
+        function updateFilterSummary(year, month, dateFrom, dateTo, users) {
             const summary = document.getElementById('filterSummary');
             let summaryText = 'Filters applied: ';
             const filters = [];
             
+            if (dateFrom) filters.push(`From: ${dateFrom}`);
+            if (dateTo) filters.push(`To: ${dateTo}`);
             if (year) filters.push(`Year: ${year}`);
             if (month) {
                 const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
@@ -793,8 +836,15 @@ var users = {
                         document.getElementById('filters').classList.add('visible');
                         populateUserDropdown();
                         
-                        showStatus(`Successfully loaded ${originalData.length} attendance records from ${filename}.`, 'success');
-                        createTable();
+                        // Hide table - do not render full data on load
+                        document.getElementById('attendanceTable').classList.remove('visible');
+                        document.getElementById('tableBody').innerHTML = '';
+                        document.getElementById('subHeaderRow').innerHTML = '';
+                        while (document.getElementById('headerRow').children.length > 1) {
+                            document.getElementById('headerRow').removeChild(document.getElementById('headerRow').lastChild);
+                        }
+                        
+                        showStatus(`Successfully loaded ${originalData.length} attendance records from ${filename}. Select a Year, Month, or date range and click "Apply Filters" to render the table.`, 'success');
                     },
                     error: function(error) {
                         setLoadingState(false);
