@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUHS Vertical ID — Single Card Editor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#0c31a0;--muted:#667;--bg:#f1f2f6}
+body{font-family:"Trebuchet MS",Arial,sans-serif;background:var(--bg);color:#111}
+  header{max-width:1280px;margin:14px auto 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{font-size:15px}
+  header h1 span{font-weight:400;color:var(--muted)}
+  #printAllWrap{display:none}
+  .print-page{width:100%;max-width:297mm;min-height:190mm;padding:5mm 3mm;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:2mm 2.5mm;align-content:flex-start;justify-content:center}
+  .print-page .card{box-shadow:0 0 0 0.3px #ddd}
+button{cursor:pointer}
+.stepper{max-width:1280px;margin:8px auto;display:flex;gap:8px;padding:0 14px}
+.step{flex:1;background:#fff;border:1.5px solid #e5e7f0;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;opacity:.6}
+.step.active{opacity:1;border-color:var(--accent);box-shadow:0 2px 10px rgba(12,49,160,.08)}
+.step.done{opacity:1;border-color:#1a9b4a}
+.step .num{width:28px;height:28px;border-radius:50%;background:#eef2ff;color:var(--accent);display:grid;place-items:center;font-weight:900;font-size:13px;flex:0 0 28px}
+.step.done .num{background:#1a9b4a;color:#fff}
+.step b{font-size:12px;line-height:1.1}
+.step small{font-size:11px;color:var(--muted)}
+.layout{max-width:1280px;margin:10px auto;display:grid;grid-template-columns:340px 1fr 310px;gap:12px;padding:0 14px 20px}
+@media(max-width:1050px){.layout{grid-template-columns:1fr 1fr}.layout .preview{grid-column:1 / -1;order:-1}}
+@media(max-width:680px){.layout{grid-template-columns:1fr}.stepper{flex-direction:column}}
+.panel{background:#fff;border-radius:12px;box-shadow:0 2px 14px rgba(0,0,0,.06);padding:12px;border:1px solid #eef0f7}
+.panel h2{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;border-bottom:1px solid #eef0ff;padding-bottom:6px}
+.panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#333;margin:10px 0 6px}
+.ctrl{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.ctrl label{font-size:11px;font-weight:700;color:#333}
+.ctrl input[type=file], .ctrl select, .ctrl input[type=text], .ctrl input[type=number]{font-size:12px;padding:7px 8px;border:1px solid #d0d6ea;border-radius:7px;background:#fff;width:100%}
+.ctrl .row{display:flex;gap:6px}
+.ctrl .row>*{flex:1}
+.btn{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:800;font-size:12px}
+.btn.secondary{background:#5b647c}
+.btn.ghost{background:#eef2ff;color:var(--accent);border:1px solid #d8deff}
+.btn.small{padding:6px 8px;font-size:11px}
+.hint{font-size:11px;color:#6b7391;line-height:1.4}
+.cols{max-height:160px;overflow:auto;border:1px solid #e7eaf7;border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;background:#fbfcff}
+.col-item{font-size:11px;padding:4px 6px;border-radius:6px;background:#fff;border:1px solid #eef0ff;display:flex;justify-content:space-between;gap:6px}
+.col-item b{color:var(--accent)}
+.badge{font-size:10px;padding:2px 6px;border-radius:20px;background:#eef2ff;color:var(--accent);white-space:nowrap}
+.preview{display:flex;flex-direction:column;align-items:center;gap:10px}
+.preview .stage{position:relative;width:100%;display:grid;place-items:center;background:#e9ecf5;border-radius:12px;padding:18px;min-height:520px}
+.zoom-bar{display:flex;gap:6px;align-items:center;font-size:11px}
+.zoom-bar input{width:120px}
+.card{
+  position:relative;
+  width:56mm;
+  height:87mm;
+  background:#fff;
+  overflow:hidden;
+  box-shadow:0 6px 24px rgba(0,0,0,.18), 0 0 0 1px #d6daeb;
+  transform-origin:center;
+  flex:0 0 auto;
+}
+.card .photo{
+  position:absolute;
+  left:27.84%; top:20.41%; width:44.17%; height:29.54%;
+  object-fit:cover;object-position:top center;border-radius:50%;background:#e8e8e8;
+}
+.card .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none}
+.card .sig{position:absolute;left:50%;top:49.6%;transform:translateX(-50%);width:24%;height:7.2%;object-fit:contain;object-position:center bottom}
+.card .principal{position:absolute;left:50%;top:56.6%;transform:translateX(-50%);font-style:italic;font-weight:800;font-size:3.4mm;line-height:1;white-space:nowrap;color:#000}
+.card .name{position:absolute;left:3%;right:3%;top:61.2%;text-align:center;color:#0d2ea6;font-weight:900;font-size:3.15mm;line-height:3.35mm;text-transform:uppercase;font-family:Arial,"Trebuchet MS",sans-serif;overflow:hidden}
+.card .details{position:absolute;left:4.2%;right:4.2%;top:70%;font-size:2.25mm;line-height:2.95mm;color:#000;display:grid;gap:1.2mm}
+.details .row{display:grid;gap:1mm 2.5mm;align-items:baseline;margin:0}
+.details .row.cols-3{grid-template-columns:auto 1fr auto 1fr auto 1fr}
+.details .row.cols-2{grid-template-columns:auto 1fr auto 1fr}
+.details .row.cols-1{grid-template-columns:auto 1fr}
+.details .row .k{font-weight:800;white-space:nowrap}
+.details .row .v{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.details .row.cols-1 .v{white-space:normal}
+.selectable{cursor:move;outline:1.5px dashed transparent;outline-offset:1px}
+.selectable:hover{outline-color:#8aa0ff}
+.selectable.selected{outline:1.8px solid var(--accent);outline-offset:1px;box-shadow:0 0 0 3px rgba(12,49,160,.12)}
+.layer-list{display:flex;flex-direction:column;gap:4px}
+.layer-item{padding:6px 8px;border:1px solid #e6e9f7;border-radius:8px;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px}
+.layer-item.active{border-color:var(--accent);background:#eef2ff}
+.layer-item .name{font-weight:700}
+.prop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prop{display:flex;flex-direction:column;gap:3px}
+.prop label{font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em}
+.prop input[type=range], .prop input[type=number]{width:100%}
+.kbd{font-size:10px;color:#888}
+.no-print{}
+@media print{
+  body{background:#fff}
+  /* single-card mode: hide chrome, keep preview */
+  body:not(.printing-all) header,
+  body:not(.printing-all) .stepper,
+  body:not(.printing-all) .left,
+  body:not(.printing-all) .right{display:none !important}
+  body:not(.printing-all) .layout{display:block !important;max-width:none;padding:0}
+  body:not(.printing-all) .preview{display:flex !important}
+  body:not(.printing-all) .preview .stage{background:#fff !important;padding:0;min-height:auto}
+  body:not(.printing-all) #printAllWrap{display:none !important}
+  body:not(.printing-all) .card{box-shadow:none !important;transform:none !important;width:56mm !important;height:87mm !important}
+  body:not(.printing-all) .zoom-bar{display:none !important}
+  /* all-cards mode: only printAllWrap visible (no header/preview/chrome) */
+  body.printing-all header,
+  body.printing-all .stepper,
+  body.printing-all .layout,
+  body.printing-all .preview{display:none !important}
+  body.printing-all #printAllWrap{display:block !important}
+  #printAllWrap .card{box-shadow:none !important;transform:none !important;width:56mm !important;height:87mm !important}
+  #printAllWrap .selectable{outline:none !important;box-shadow:none !important}
+  .print-page{page-break-after:always}
+  .print-page:last-child{page-break-after:auto}
+  @page{size:A4 landscape;margin:4mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>BUHS Vertical ID — <span>Single card editor • background • CSV • photo folder (480p)</span></h1>
+  <div style="display:flex;gap:8px">
+    <button class="btn ghost small" onclick="resetLayout()">Reset layout</button>
+    <button class="btn small" onclick="window.print()">Print this card</button>
+    <button class="btn small" id="printAllBtn" onclick="printAll()" style="background:#1a9b4a">Print All</button>
+  </div>
+</header>
+
+<div class="stepper">
+  <div class="step active" id="step1"><div class="num">1</div><div><b>Background</b><br><small id="step1sub">Not selected — please upload</small></div></div>
+  <div class="step" id="step2"><div class="num">2</div><div><b>CSV & Columns</b><br><small id="step2sub">Not loaded — please upload CSV</small></div></div>
+  <div class="step" id="step3"><div class="num">3</div><div><b>Photos Folder</b><br><small id="step3sub">Not selected</small></div></div>
+</div>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left" style="display:flex;flex-direction:column;gap:12px">
+    <div class="panel" id="panel-bg">
+      <h2>Step 1 — Background image</h2>
+      <div class="ctrl">
+        <label>Background image — please select *</label>
+        <input type="file" id="bgFile" accept="image/*" required>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <img id="bgThumb" alt="No background selected" style="width:72px;height:110px;object-fit:contain;border:1px dashed #b6bdd7;border-radius:6px;background:#f8f9ff;display:none">
+          <div id="bgThumbPlaceholder" style="width:72px;height:110px;display:grid;place-items:center;border:1px dashed #b6bdd7;border-radius:6px;background:#f8f9ff;color:#6b7391;font-size:10px;text-align:center;padding:6px">No background selected<br><small>Choose PNG/JPG</small></div>
+          <div class="hint">No default background is loaded. Please select a PNG/JPG (transparent circle reveals the photo underneath). E.g. <code>back_img.png</code> in this folder.</div>
+        </div>
+      </div>
+      <div class="ctrl">
+        <label>Signature image (optional)</label>
+        <input type="file" id="sigFile" accept="image/*">
+        <div class="hint">Shown just below photo (above “Principal”). Auto-resized to 480p max. Leave empty if not needed.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-csv">
+      <h2>Step 2 — CSV & Columns</h2>
+      <div class="ctrl">
+        <label>CSV file — please select *</label>
+        <input type="file" id="csvFile" accept=".csv" required>
+        <span class="hint">No CSV is pre-loaded. Please select a CSV file. First row must be headings. Example: <code>csv/data.csv</code></span>
+      </div>
+      <div class="ctrl">
+        <div id="colsBox" class="cols" style="display:none"></div>
+        <div id="csvHint" class="hint">Upload CSV to see columns list here.</div>
+      </div>
+      <div class="ctrl">
+        <label>Rows (generate only one)</label>
+        <select id="rowSelect"></select>
+        <div class="row" style="margin-top:4px">
+          <button class="btn ghost small" id="maxTextBtn" type="button">Pick max-text row</button>
+          <button class="btn secondary small" id="prevRowBtn" type="button">◀ Prev</button>
+          <button class="btn secondary small" id="nextRowBtn" type="button">Next ▶</button>
+        </div>
+        <span class="hint">“Max-text row” = data row with most characters (ignoring header). Use to test longest address/name.</span>
+      </div>
+      <div class="ctrl">
+        <label>Photo key column (mapping)</label>
+        <select id="keyCol"></select>
+        <span class="hint">Image filename (without extension) must equal this column’s value, e.g. <code>15672.jpg</code> ↔ <code>G.R. No.</code></span>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-photos">
+      <h2>Step 3 — Photos folder</h2>
+      <div class="ctrl" id="photoCtrl">
+        <label>Photos folder — select directory</label>
+        <div class="row">
+          <input type="file" id="photoDir" webkitdirectory directory multiple accept="image/*" style="flex:1">
+          <button type="button" id="pickDirBtn" class="btn small" style="white-space:nowrap">Browse Folder…</button>
+        </div>
+        <span class="hint">Select a <b>folder</b> containing images (e.g. <code>photos/</code>). All images inside (recursive) are read &amp; resized to <b>480p max</b>. Drag &amp; drop a folder onto this box also works.</span>
+        <div id="photoProgress" class="hint" style="color:#0c31a0;display:none"></div>
+      </div>
+      <div class="ctrl">
+        <div id="mapBox" class="cols" style="display:none"></div>
+        <div id="mapHint" class="hint">Mapping status for the selected row will appear here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER PREVIEW -->
+  <div class="preview panel">
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0;border:none;padding:0">Preview — single card only</h2>
+      <span id="selLabel" class="badge">Selected: —</span>
+    </div>
+    <div class="stage" id="stage">
+      <div id="card" class="card" style="transform:scale(1)">
+        <img class="photo selectable" id="el-photo" data-id="photo" alt="">
+        <img class="bg selectable" id="el-bg" data-id="bg" alt="" style="display:none">
+        <img class="sig selectable" id="el-sig" data-id="sig" alt="" style="display:none" onerror="this.style.display='none'">
+        <div class="principal selectable" id="el-principal" data-id="principal">Principal</div>
+        <div class="name selectable" id="el-name" data-id="name">—</div>
+        <div class="details selectable" id="el-details" data-id="details">
+          <div class="row cols-3"><span class="k">Std.:</span><span class="v" data-f="std">-</span><span class="k">Div.:</span><span class="v" data-f="div">-</span><span class="k">Roll No.:</span><span class="v" data-f="roll">-</span></div>
+          <div class="row cols-2"><span class="k">G.R.No.:</span><span class="v" data-f="gr">-</span><span class="k">D.O.B.:</span><span class="v" data-f="dob">-</span></div>
+          <div class="row cols-1"><span class="k">Add.:</span><span class="v" data-f="addr">-</span></div>
+          <div class="row cols-1"><span class="k">Contact No.:</span><span class="v" data-f="mob">-</span></div>
+        </div>
+        <span id="missingBadge" style="display:none;position:absolute;z-index:30;top:34%;left:50%;transform:translateX(-50%);background:rgba(200,0,0,.9);color:#fff;font-size:7px;padding:2px 6px;border-radius:10px">No photo</span>
+        <div id="noBgOverlay" style="position:absolute;inset:0;display:grid;place-items:center;background:repeating-linear-gradient(45deg,#f8f9ff,#f8f9ff 10px,#eef0ff 10px,#eef0ff 20px);color:#5b647c;font-size:11px;text-align:center;padding:12px;z-index:0">No background selected<br><small>Please select a background image in Step 1</small></div>
+        <div id="noCsvOverlay" style="position:absolute;inset:0;display:none;place-items:center;background:rgba(255,255,255,.88);color:#333;font-size:11px;text-align:center;padding:12px;z-index:20">No CSV loaded<br><small>Please select a CSV file in Step 2</small></div>
+      </div>
+    </div>
+    <div class="zoom-bar">
+      <label>Zoom</label>
+      <input type="range" id="zoom" min="0.7" max="1.8" step="0.05" value="1">
+      <span id="zoomV">100%</span>
+      <span class="kbd">Tip: click any text/photo then drag to move • Use right panel for size & layer order</span>
+    </div>
+    <div id="cardStats" class="hint" style="text-align:center"></div>
+  </div>
+
+  <!-- RIGHT PROPERTIES -->
+  <div class="right" style="display:flex;flex-direction:column;gap:12px">
+    <div class="panel">
+      <h2>Element — position & size</h2>
+      <div id="noSel" class="hint">Click any element on the card to select it (photo, signature, name, details, “Principal”).</div>
+      <div id="propBox" style="display:none">
+        <div class="layer-list" id="layerList"></div>
+        <div class="prop-grid" style="margin-top:10px">
+          <div class="prop"><label>Top %</label><input type="range" id="pTop" min="0" max="85" step="0.1"><input type="number" id="pTopN" step="0.1"></div>
+          <div class="prop"><label>Left %</label><input type="range" id="pLeft" min="0" max="85" step="0.1"><input type="number" id="pLeftN" step="0.1"></div>
+          <div class="prop"><label>Width %</label><input type="range" id="pW" min="5" max="95" step="0.1"><input type="number" id="pWN" step="0.1"></div>
+          <div class="prop"><label>Height %</label><input type="range" id="pH" min="2" max="60" step="0.1"><input type="number" id="pHN" step="0.1"></div>
+          <div class="prop"><label>Font size</label><input type="range" id="pFS" min="6" max="28" step="0.1"><input type="number" id="pFSN" step="0.1"></div>
+          <div class="prop"><label>Layer (z-index)</label><input type="number" id="pZ" step="1"></div>
+          <div class="prop" id="propLH" style="display:none"><label>Line height</label><input type="range" id="pLH" min="6" max="32" step="0.1"><input type="number" id="pLHN" step="0.1"></div>
+        </div>
+        <div class="hint" id="lhHint" style="display:none;margin-top:4px">Line-height controls spacing between lines inside the selected element. Most useful for <b>details</b> block.</div>
+        <!-- typography for name/details/principal -->
+        <div id="typoBox" style="display:none;margin-top:10px;border-top:1px solid #eef0ff;padding-top:8px">
+          <div class="prop-grid">
+            <div class="prop"><label>Font color</label><input type="color" id="pColor" value="#000000" style="height:32px;padding:2px"></div>
+            <div class="prop"><label>Text align</label>
+              <select id="pAlign">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+                <option value="justify">Justify</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="pItalic"> <i>Italic</i></label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="pBold"> <b>Bold</b></label>
+          </div>
+          <div class="hint" style="margin-top:6px">Applies to <b>name</b>, <b>details</b> and <b>Principal</b> only. “Bold” makes values bold; details keys stay 800.</div>
+        </div>
+        <!-- photo frame: circle/rectangle + border -->
+        <div id="photoFrameBox" style="display:none;margin-top:10px;border-top:1px solid #eef0ff;padding-top:8px">
+          <div class="prop-grid">
+            <div class="prop"><label>Frame shape</label>
+              <select id="pFrame">
+                <option value="circle">Circle</option>
+                <option value="rectangle">Rectangle</option>
+              </select>
+            </div>
+            <div class="prop"><label>Border color</label><input type="color" id="pBColor" value="#0e2eb8" style="height:32px;padding:2px"></div>
+          </div>
+          <div class="prop" style="margin-top:8px"><label>Border width (px)</label>
+            <input type="range" id="pBW" min="0" max="8" step="0.2">
+            <input type="number" id="pBWN" min="0" max="8" step="0.2" style="margin-top:4px">
+          </div>
+          <div class="hint" style="margin-top:6px">Choose <b>Circle</b> (50% radius) or <b>Rectangle</b> (6px radius). Border renders around photo; matches card background hole.</div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost small" id="frontBtn" type="button">Bring to front</button>
+          <button class="btn ghost small" id="backBtn" type="button">Send to back</button>
+        </div>
+        <div class="hint" style="margin-top:6px">Drag directly on card to move. Hold <b>Shift</b> while dragging for finer control.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Layers — front / back</h2>
+      <div id="layersBox" class="layer-list"></div>
+      <div class="hint" style="margin-top:6px">Click a layer to select. “Front” puts it above all, “Back” below all. Z values are editable above.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Tips</h2>
+      <div class="hint">
+        • Only one card is rendered at a time (no bulk).<br>
+        • Use <b>Step 1</b> to change background, <b>Step 2</b> to pick the row with max text, <b>Step 3</b> to map <code>{column}.jpg</code>.<br>
+        • Photos are downscaled to 480p max before display for speed.<br>
+        • Print prints only the single card (A4 landscape friendly — duplicate via copy-paste if needed).
+      </div>
+    </div>
+  </div>
+</div>
+<div id="printAllWrap"></div>
+
+<script>
+// ---------- CSV ----------
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const rows=[]; let cur='', row=[], inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], nc=text[i+1];
+    if(c==='"'){ if(inQ && nc==='"'){cur+='"';i++;} else inQ=!inQ; }
+    else if(c===',' && !inQ){ row.push(cur);cur='';}
+    else if(c==='\n' && !inQ){ row.push(cur);rows.push(row);cur='';row=[]; }
+    else cur+=c;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  while(rows.length && rows[rows.length-1].every(v=>v.trim()==='')) rows.pop();
+  return rows;
+}
+function norm(s){return (s||'').trim().replace(/\uFEFF/g,'');}
+function findColIndex(headers, keys){
+  const lhs=headers.map(h=>norm(h).toLowerCase());
+  for(let k of keys){ k=k.toLowerCase(); for(let i=0;i<lhs.length;i++) if(lhs[i].includes(k)) return i; }
+  return -1;
+}
+function esc(t){const d=document.createElement('div'); d.textContent=t; return d.innerHTML;}
+
+// ---------- State ----------
+let rawRows=[], headers=[], dataRows=[];
+let currentKeyCol=-1, selectedRowIdx=0;
+let photoMap=new Map(), sigURL='', bgURL='';
+const MAX_SIDE=480;
+
+// Element configs (defaults matching original CSS) — includes typography for name/details/principal + photo frame
+const defaults = {
+  photo:     {top:20.41, left:27.84, w:44.17, h:29.54, fs:12, lh:12, z:1, color:'#000000', align:'left', italic:false, bold:false, frame:'circle', bw:1.8, bcolor:'#0e2eb8'},
+  bg:        {top:0, left:0, w:100, h:100, fs:12, lh:12, z:2, color:'#000000', align:'left', italic:false, bold:false, frame:'circle', bw:0, bcolor:'#000000'},
+  sig:       {top:49.6, left:38, w:24, h:7.2, fs:12, lh:12, z:3, color:'#000000', align:'left', italic:false, bold:false, frame:'circle', bw:0, bcolor:'#000000'},
+  principal: {top:56.6, left:50, w:30, h:5, fs:12.9, lh:12.9, z:3, color:'#000000', align:'center', italic:true, bold:true, frame:'circle', bw:0, bcolor:'#000000'},
+  name:      {top:61.2, left:3, w:94, h:7, fs:12, lh:12.7, z:3, color:'#0d2ea6', align:'center', italic:false, bold:true, frame:'circle', bw:0, bcolor:'#000000'},
+  details:   {top:70, left:4.2, w:91.6, h:22, fs:8.5, lh:11.2, z:3, color:'#000000', align:'left', italic:false, bold:false, frame:'circle', bw:0, bcolor:'#000000'},
+};
+let cfg = JSON.parse(JSON.stringify(defaults));
+let selectedId = null;
+
+const els = {
+  bgThumb: document.getElementById('bgThumb'),
+  bgEl: document.getElementById('el-bg'),
+  photoEl: document.getElementById('el-photo'),
+  sigEl: document.getElementById('el-sig'),
+  nameEl: document.getElementById('el-name'),
+  principalEl: document.getElementById('el-principal'),
+  detailsEl: document.getElementById('el-details'),
+  card: document.getElementById('card'),
+  stage: document.getElementById('stage'),
+};
+
+// ---------- Helpers: apply config to DOM ----------
+function applyCfg(){
+  const map = {
+    photo: els.photoEl,
+    bg: els.bgEl,
+    sig: els.sigEl,
+    principal: els.principalEl,
+    name: els.nameEl,
+    details: els.detailsEl,
+  };
+  for(const id in cfg){
+    const c=cfg[id], el=map[id];
+    if(!el) continue;
+    el.style.top=c.top+'%';
+    el.style.left=c.left+'%';
+    el.style.width=c.w+'%';
+    el.style.height=c.h+'%';
+    el.style.zIndex=c.z;
+    // typography for text elements (name/details/principal)
+    if(id==='name' || id==='details' || id==='principal'){
+      el.style.fontSize=c.fs+'px';
+      if(c.lh!=null) el.style.lineHeight=c.lh+'px';
+      if(c.color) el.style.color=c.color;
+      if(c.align) el.style.textAlign=c.align;
+      el.style.fontStyle = c.italic ? 'italic' : 'normal';
+      el.style.fontWeight = c.bold ? '800' : '400';
+      if(id==='details'){
+        el.style.fontWeight = c.bold ? '700' : '400';
+      }
+      if(id==='name' && c.bold) el.style.fontWeight='900';
+    }
+    // photo frame: circle / rectangle + border color & width
+    if(id==='photo'){
+      const isCircle = (c.frame||'circle')==='circle';
+      el.style.borderRadius = isCircle ? '50%' : '6px';
+      const bw = parseFloat(c.bw) || 0;
+      if(bw>0){
+        el.style.border = bw+'px solid '+(c.bcolor||'#0e2eb8');
+      } else {
+        el.style.border = 'none';
+      }
+      // keep object-fit; ensure box-sizing
+      el.style.boxSizing='border-box';
+    }
+  }
+  // sig is centered via left; keep transform
+  // principal keep translate
+  updateLayerList();
+  syncPropInputs();
+  try{ localStorage.setItem('buhs_single_cfg', JSON.stringify(cfg)); }catch{}
+}
+function loadCfg(){
+  try{
+    const s=localStorage.getItem('buhs_single_cfg');
+    if(s){ const o=JSON.parse(s); for(const k in o) if(cfg[k]) cfg[k]={...cfg[k], ...o[k]}; }
+    // backfill new keys for older saved configs
+    for(const k in defaults){
+      if(cfg[k]){
+        if(cfg[k].lh==null) cfg[k].lh = defaults[k].lh;
+        if(cfg[k].color==null) cfg[k].color = defaults[k].color;
+        if(cfg[k].align==null) cfg[k].align = defaults[k].align;
+        if(cfg[k].italic==null) cfg[k].italic = defaults[k].italic;
+        if(cfg[k].bold==null) cfg[k].bold = defaults[k].bold;
+        if(cfg[k].frame==null) cfg[k].frame = defaults[k].frame;
+        if(cfg[k].bw==null) cfg[k].bw = defaults[k].bw;
+        if(cfg[k].bcolor==null) cfg[k].bcolor = defaults[k].bcolor;
+      }
+    }
+  }catch{}
+  applyCfg();
+}
+
+// ---------- Selection & props ----------
+function selectId(id){
+  selectedId=id;
+  document.querySelectorAll('.selectable').forEach(e=> e.classList.toggle('selected', e.dataset.id===id));
+  document.querySelectorAll('.layer-item').forEach(e=> e.classList.toggle('active', e.dataset.id===id));
+  document.getElementById('selLabel').textContent='Selected: '+(id||'—');
+  const has = !!id;
+  document.getElementById('noSel').style.display=has?'none':'block';
+  document.getElementById('propBox').style.display=has?'block':'none';
+  syncPropInputs();
+}
+function syncPropInputs(){
+  if(!selectedId) return;
+  const c=cfg[selectedId];
+  if(!c) return;
+  [['pTop','top'],['pLeft','left'],['pW','w'],['pH','h'],['pFS','fs'],['pZ','z']].forEach(([pid,key])=>{
+    const a=document.getElementById(pid), b=document.getElementById(pid+'N');
+    if(a) a.value=c[key];
+    if(b) b.value=c[key];
+  });
+  // font-size & line-height + typography only for text elements
+  const isText = ['name','details','principal'].includes(selectedId);
+  document.getElementById('pFS').disabled=!isText;
+  document.getElementById('pFSN').disabled=!isText;
+  const showLH = isText;
+  document.getElementById('propLH').style.display = showLH ? 'flex' : 'none';
+  document.getElementById('lhHint').style.display = showLH ? 'block' : 'none';
+  const typoBox=document.getElementById('typoBox');
+  if(typoBox) typoBox.style.display = isText ? 'block' : 'none';
+  if(showLH){
+    const a=document.getElementById('pLH'), b=document.getElementById('pLHN');
+    if(a) a.value = c.lh ?? defaults[selectedId].lh;
+    if(b) b.value = c.lh ?? defaults[selectedId].lh;
+    a.disabled=false; b.disabled=false;
+  }
+  if(isText){
+    const col=document.getElementById('pColor'); if(col) col.value=c.color||defaults[selectedId].color;
+    const al=document.getElementById('pAlign'); if(al) al.value=c.align||defaults[selectedId].align;
+    const it=document.getElementById('pItalic'); if(it) it.checked=!!c.italic;
+    const bd=document.getElementById('pBold'); if(bd) bd.checked=!!c.bold;
+  }
+  // photo frame controls
+  const isPhoto = selectedId==='photo';
+  const pfBox=document.getElementById('photoFrameBox');
+  if(pfBox) pfBox.style.display = isPhoto ? 'block' : 'none';
+  if(isPhoto){
+    const fr=document.getElementById('pFrame'); if(fr) fr.value=c.frame||'circle';
+    const bc=document.getElementById('pBColor'); if(bc) bc.value=c.bcolor||'#0e2eb8';
+    const bw=document.getElementById('pBW'), bwn=document.getElementById('pBWN');
+    if(bw) bw.value = c.bw ?? 1.8;
+    if(bwn) bwn.value = c.bw ?? 1.8;
+  }
+}
+function bindProps(){
+  const pairs=[['pTop','top',true],['pLeft','left',true],['pW','w',true],['pH','h',true],['pFS','fs',true],['pZ','z',false],['pLH','lh',true]];
+  pairs.forEach(([pid,key])=>{
+    const a=document.getElementById(pid), b=document.getElementById(pid+'N');
+    const handler=(v)=>{
+      if(!selectedId) return;
+      let n=parseFloat(v);
+      if(isNaN(n)) return;
+      cfg[selectedId][key]=n;
+      applyCfg();
+    };
+    if(a) a.addEventListener('input', e=>{ const other=document.getElementById(pid+'N')||b; if(other) other.value=e.target.value; handler(e.target.value); });
+    if(b) b.addEventListener('input', e=>{ const other=document.getElementById(pid)||a; if(other) other.value=e.target.value; handler(e.target.value); });
+  });
+  // typography: color / align / italic / bold for name/details/principal
+  const col=document.getElementById('pColor'); if(col) col.addEventListener('input', e=>{ if(!selectedId) return; cfg[selectedId].color=e.target.value; applyCfg(); });
+  const al=document.getElementById('pAlign'); if(al) al.addEventListener('change', e=>{ if(!selectedId) return; cfg[selectedId].align=e.target.value; applyCfg(); });
+  const it=document.getElementById('pItalic'); if(it) it.addEventListener('change', e=>{ if(!selectedId) return; cfg[selectedId].italic=e.target.checked; applyCfg(); });
+  const bd=document.getElementById('pBold'); if(bd) bd.addEventListener('change', e=>{ if(!selectedId) return; cfg[selectedId].bold=e.target.checked; applyCfg(); });
+  // photo frame: circle/rectangle + border
+  const fr=document.getElementById('pFrame'); if(fr) fr.addEventListener('change', e=>{ if(selectedId!=='photo') return; cfg.photo.frame=e.target.value; applyCfg(); });
+  const bc=document.getElementById('pBColor'); if(bc) bc.addEventListener('input', e=>{ if(selectedId!=='photo') return; cfg.photo.bcolor=e.target.value; applyCfg(); });
+  const bw=document.getElementById('pBW'), bwn=document.getElementById('pBWN');
+  function setBW(v){ if(selectedId!=='photo') return; const n=parseFloat(v); if(isNaN(n)) return; cfg.photo.bw=n; applyCfg(); if(bw && bwn){ if(document.activeElement!==bw) bw.value=n; if(document.activeElement!==bwn) bwn.value=n; } }
+  if(bw) bw.addEventListener('input', e=> setBW(e.target.value));
+  if(bwn) bwn.addEventListener('input', e=> setBW(e.target.value));
+  document.getElementById('frontBtn').addEventListener('click', ()=>{
+    if(!selectedId) return;
+    const max=Math.max(...Object.values(cfg).map(v=>v.z));
+    cfg[selectedId].z=max+1; applyCfg();
+  });
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    if(!selectedId) return;
+    const min=Math.min(...Object.values(cfg).map(v=>v.z));
+    cfg[selectedId].z=min-1; applyCfg();
+  });
+}
+function updateLayerList(){
+  const order = Object.entries(cfg).sort((a,b)=> b[1].z - a[1].z);
+  const box=document.getElementById('layersBox');
+  const layerList=document.getElementById('layerList');
+  const html = order.map(([id,c])=> `<div class="layer-item ${selectedId===id?'active':''}" data-id="${id}"><span class="name">${id}</span><span class="badge">z ${c.z}</span></div>`).join('');
+  box.innerHTML=html; layerList.innerHTML=html;
+  box.querySelectorAll('.layer-item').forEach(el=> el.addEventListener('click', ()=> selectId(el.dataset.id)));
+  layerList.querySelectorAll('.layer-item').forEach(el=> el.addEventListener('click', ()=> selectId(el.dataset.id)));
+}
+
+// ---------- Drag ----------
+(function enableDrag(){
+  let dragging=null, sx=0, sy=0, st=0, sl=0;
+  function onDown(e){
+    const t=e.target.closest('.selectable');
+    if(!t) return;
+    const id=t.dataset.id;
+    selectId(id);
+    dragging=id;
+    const rect=els.card.getBoundingClientRect();
+    sx=e.clientX; sy=e.clientY;
+    st=cfg[id].top; sl=cfg[id].left;
+    e.preventDefault();
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const rect=els.card.getBoundingClientRect();
+    const dx=e.clientX - sx, dy=e.clientY - sy;
+    const slow = e.shiftKey ? 0.35 : 1;
+    const dLeft = (dx / rect.width * 100) * slow;
+    const dTop  = (dy / rect.height * 100) * slow;
+    cfg[dragging].left = Math.max(0, Math.min(92, sl + dLeft));
+    cfg[dragging].top  = Math.max(0, Math.min(92, st + dTop));
+    applyCfg();
+  }
+  function onUp(){ dragging=null; }
+  els.card.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  // touch
+  els.card.addEventListener('touchstart', e=>{ const t=e.touches[0]; if(t) onDown({target:e.target, clientX:t.clientX, clientY:t.clientY, preventDefault:()=>e.preventDefault()}); }, {passive:false});
+  window.addEventListener('touchmove', e=>{ if(!dragging) return; const t=e.touches[0]; if(t) onMove({clientX:t.clientX, clientY:t.clientY, shiftKey:false}); }, {passive:false});
+  window.addEventListener('touchend', onUp);
+})();
+
+// ---------- Background & Signature ----------
+document.getElementById('bgFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const old = bgURL;
+  const next = URL.createObjectURL(f);
+  bgURL = next;
+  els.bgEl.onload = ()=>{ if(old && old.startsWith('blob:')) try{URL.revokeObjectURL(old);}catch{}; els.bgEl.onload=null; };
+  els.bgEl.onerror = ()=>{ console.error('Background load failed', f.name); els.bgEl.onload=null; };
+  els.bgEl.src = next;
+  els.bgEl.style.display='';
+  const thumb=document.getElementById('bgThumb');
+  const ph=document.getElementById('bgThumbPlaceholder');
+  thumb.src=next; thumb.style.display='block';
+  if(ph) ph.style.display='none';
+  const overlay=document.getElementById('noBgOverlay');
+  if(overlay) overlay.style.display='none';
+  stepDone(1, f.name);
+});
+document.getElementById('sigFile').addEventListener('change', async e=>{
+  const f=e.target.files[0]; if(!f){
+    if(sigURL && sigURL.startsWith('blob:')) try{URL.revokeObjectURL(sigURL);}catch{}
+    sigURL='';
+    els.sigEl.removeAttribute('src');
+    els.sigEl.style.display='none';
+    return;
+  }
+  const old = sigURL;
+  const next = await resizeTo480p(f);
+  sigURL = next;
+  els.sigEl.onload = ()=>{ if(old && old.startsWith('blob:')) try{URL.revokeObjectURL(old);}catch{}; els.sigEl.onload=null; };
+  els.sigEl.src = next;
+  els.sigEl.style.display='';
+});
+/* clear background selection if user cancels */
+document.getElementById('bgFile').addEventListener('click', e=>{ e.target.value=''; });
+
+// ---------- CSV ----------
+document.getElementById('csvFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=> loadCSVText(r.result, f.name); r.readAsText(f);
+});
+function loadCSVText(text, name='csv/data.csv'){
+  const rows=parseCSV(text);
+  if(!rows.length) return;
+  rawRows=rows; headers=rows[0].map(h=>norm(h)); dataRows=rows.slice(1).filter(r=> r.some(v=>norm(v)!==''));
+  buildColumns();
+  buildKeyCol();
+  buildRowSelect();
+  // auto pick max-text row
+  pickMaxTextRow(false);
+  stepDone(2, `${headers.length} cols • ${dataRows.length} rows`);
+  renderSingle();
+}
+function buildColumns(){
+  const box=document.getElementById('colsBox'), hint=document.getElementById('csvHint');
+  if(!headers.length){ box.style.display='none'; hint.style.display='block'; return; }
+  box.style.display='flex'; hint.style.display='none';
+  box.innerHTML=headers.map((h,i)=>{
+    const sample = dataRows.slice(0,2).map(r=> norm(r[i]||'')).filter(Boolean).join(' | ') || '—';
+    return `<div class="col-item"><span><b>${esc(h||'Col '+(i+1))}</b> <span style="color:#666">— ${esc(sample.slice(0,60))}</span></span><span class="badge">${i}</span></div>`;
+  }).join('');
+  document.getElementById('step2sub').textContent=headers.join(' • ').slice(0,80);
+}
+function buildKeyCol(){
+  const sel=document.getElementById('keyCol');
+  sel.innerHTML='';
+  headers.forEach((h,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=h||`Column ${i+1}`; sel.appendChild(o); });
+  let idx=findColIndex(headers, ['g.r. no','g.r.no','gr no','gr. no','gr']);
+  if(idx===-1) idx=findColIndex(headers, ['g r']);
+  if(idx===-1) idx=findColIndex(headers, ['roll']);
+  if(idx===-1) idx=1;
+  if(idx<0||idx>=headers.length) idx=0;
+  sel.value=String(idx); currentKeyCol=idx;
+  sel.onchange=()=>{ currentKeyCol=parseInt(sel.value,10); renderSingle(); updateMapBox(); };
+}
+function buildRowSelect(){
+  const sel=document.getElementById('rowSelect');
+  sel.innerHTML='';
+  dataRows.forEach((r,i)=>{
+    const gr = currentKeyCol>=0? norm(r[currentKeyCol]): '';
+    const name = norm(r[findColIndex(headers, ['name'])] || r[2] || '');
+    const label = `${i+1}. ${name||'Row '+(i+1)}${gr?' — '+gr:''} (${r.reduce((a,c)=>a+norm(c).length,0)} chars)`;
+    const o=document.createElement('option'); o.value=i; o.textContent=label; sel.appendChild(o);
+  });
+  sel.onchange=()=>{ selectedRowIdx=parseInt(sel.value,10)||0; renderSingle(); };
+  document.getElementById('prevRowBtn').onclick=()=>{ selectedRowIdx=Math.max(0,selectedRowIdx-1); sel.value=selectedRowIdx; renderSingle(); };
+  document.getElementById('nextRowBtn').onclick=()=>{ selectedRowIdx=Math.min(dataRows.length-1,selectedRowIdx+1); sel.value=selectedRowIdx; renderSingle(); };
+}
+function pickMaxTextRow(alertIfNone=true){
+  if(!dataRows.length) return;
+  let best=0, bestLen=-1;
+  dataRows.forEach((r,i)=>{
+    const len=r.reduce((a,c)=> a + norm(c).length, 0);
+    if(len>bestLen){ bestLen=len; best=i; }
+  });
+  selectedRowIdx=best;
+  const sel=document.getElementById('rowSelect');
+  sel.value=String(best);
+  renderSingle();
+  if(alertIfNone) sel.style.outline='2px solid #1a9b4a';
+  setTimeout(()=> sel.style.outline='', 1200);
+}
+document.getElementById('maxTextBtn').addEventListener('click', ()=> pickMaxTextRow(true));
+
+// ---------- Photos 480p ----------
+async function resizeTo480p(file, maxSide=MAX_SIDE){
+  try{
+    let bmp;
+    try{ bmp=await createImageBitmap(file); }
+    catch{
+      const url=URL.createObjectURL(file);
+      const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+      URL.revokeObjectURL(url); bmp=img;
+    }
+    const w0=bmp.width||bmp.naturalWidth, h0=bmp.height||bmp.naturalHeight;
+    const scale=Math.min(1, maxSide/Math.max(w0,h0));
+    if(scale>=1 && file.size<300*1024){ if(bmp.close) bmp.close(); return URL.createObjectURL(file); }
+    const w=Math.round(w0*scale), h=Math.round(h0*scale);
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const ctx=c.getContext('2d'); ctx.imageSmoothingQuality='high'; ctx.drawImage(bmp,0,0,w,h);
+    if(bmp.close) bmp.close();
+    const blob=await new Promise(res=> c.toBlob(res,'image/jpeg',0.82));
+    return URL.createObjectURL(blob);
+  }catch{ return URL.createObjectURL(file); }
+}
+function revokeMap(map){ for(const u of map.values()) try{URL.revokeObjectURL(u);}catch{} }
+
+async function ingestPhotoFiles(fileList){
+  const files=[...fileList].filter(f=> (f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif)$/i.test(f.name)) );
+  if(!files.length){ document.getElementById('photoProgress').style.display='none'; return; }
+  const prog=document.getElementById('photoProgress'); prog.style.display='block'; prog.textContent=`Resizing ${files.length} images to 480p… 0/${files.length}`;
+  revokeMap(photoMap); photoMap.clear();
+  let done=0; const batch=8;
+  for(let i=0;i<files.length;i+=batch){
+    const chunk=files.slice(i,i+batch);
+    await Promise.all(chunk.map(async f=>{
+      const base=f.name.replace(/\.[^.]+$/,'').trim().toLowerCase().split('/').pop().split('\\').pop();
+      const url=await resizeTo480p(f);
+      photoMap.set(base,url); photoMap.set(base.replace(/\s+/g,''),url);
+      done++; prog.textContent=`Resizing ${files.length} images to 480p… ${done}/${files.length}`;
+    }));
+  }
+  prog.textContent=`✓ ${files.length} photos resized to 480p max`;
+  stepDone(3, `${files.length} images • key: ${(document.getElementById('keyCol').selectedOptions[0]?.textContent||'—')}`);
+  renderSingle(); updateMapBox();
+}
+document.getElementById('photoDir').addEventListener('change', e=>{ if(e.target.files?.length) ingestPhotoFiles(e.target.files); });
+document.getElementById('pickDirBtn').addEventListener('click', async ()=>{
+  if(!('showDirectoryPicker' in window)){ document.getElementById('photoDir').click(); return; }
+  try{
+    const h=await window.showDirectoryPicker({mode:'read'});
+    const files=[];
+    async function walk(dir){ for await(const [name, entry] of dir.entries()){ if(entry.kind==='file' && /\.(jpe?g|png|webp|bmp|gif)$/i.test(name)) files.push(await entry.getFile()); else if(entry.kind==='directory') await walk(entry); } }
+    await walk(h); if(!files.length) alert('No images in folder'); else await ingestPhotoFiles(files);
+  }catch(err){ if(err && err.name!=='AbortError') alert('Folder pick failed: '+err.message); }
+});
+(function enableDrop(){
+  const ctrl=document.getElementById('photoCtrl');
+  ['dragenter','dragover'].forEach(ev=> ctrl.addEventListener(ev, e=>{ e.preventDefault(); ctrl.style.outline='2px dashed #0c31a0';}));
+  ['dragleave','drop'].forEach(ev=> ctrl.addEventListener(ev, e=>{ ctrl.style.outline='';}));
+  ctrl.addEventListener('drop', async e=>{
+    e.preventDefault();
+    const items=[...e.dataTransfer.items||[]], files=[...e.dataTransfer.files||[]];
+    if(items.length && items[0].webkitGetAsEntry){
+      const collected=[];
+      async function readEntry(entry){
+        if(entry.isFile){ const f=await new Promise((res,rej)=> entry.file(res,rej)); collected.push(f); }
+        else if(entry.isDirectory){ const r=entry.createReader(); const ents=await new Promise((res,rej)=> r.readEntries(res,rej)); for(const en of ents) await readEntry(en); }
+      }
+      for(const it of items){ const en=it.webkitGetAsEntry(); if(en) await readEntry(en); }
+      if(collected.length) await ingestPhotoFiles(collected); else if(files.length) await ingestPhotoFiles(files);
+    } else if(files.length) await ingestPhotoFiles(files);
+  });
+})();
+
+// ---------- Render single ----------
+function getPhotoForRow(row){
+  if(currentKeyCol<0) return '';
+  const raw=norm(row[currentKeyCol]||''); if(!raw) return '';
+  const k=raw.toLowerCase(), k2=k.replace(/\s+/g,'');
+  return photoMap.get(k) || photoMap.get(k2) || '';
+}
+function renderSingle(){
+  const csvOverlay=document.getElementById('noCsvOverlay');
+  if(!dataRows.length){
+    document.getElementById('cardStats').textContent='No CSV loaded — please select a CSV file in Step 2';
+    document.getElementById('el-name').textContent='—';
+    ['std','div','roll','gr','dob','addr','mob'].forEach(k=>{ const el=document.querySelector(`[data-f="${k}"]`); if(el) el.textContent='-'; });
+    els.photoEl.removeAttribute('src');
+    document.getElementById('missingBadge').style.display='none';
+    if(csvOverlay) csvOverlay.style.display='grid';
+    updateMapBox();
+    return;
+  }
+  if(csvOverlay) csvOverlay.style.display='none';
+  const row=dataRows[selectedRowIdx];
+  if(!row) return;
+  const idxStd=findColIndex(headers,['std','class','standard']);
+  const idxDiv=findColIndex(headers,['div','division']);
+  const idxRoll=findColIndex(headers,['roll']);
+  const idxGr=findColIndex(headers,['g.r','gr no','gr.','gr']);
+  const idxName=findColIndex(headers,['name']);
+  const idxMid=findColIndex(headers,['middle']);
+  const idxDob=findColIndex(headers,['d.o.b','dob','birth']);
+  const idxAddr=findColIndex(headers,['address','addr','add.']);
+  const idxMob=findColIndex(headers,['mobile','contact','phone','contact no']);
+  const name=norm(row[idxName>=0?idxName:2]||'');
+  const mid= idxMid>=0? norm(row[idxMid]||''):'';
+  let full=name; if(mid && !full.toLowerCase().includes(mid.toLowerCase())) full=(full+' '+mid).trim(); if(!full) full='—';
+  const std= idxStd>=0? norm(row[idxStd]):'';
+  const div= idxDiv>=0? norm(row[idxDiv]):'';
+  const roll=idxRoll>=0? norm(row[idxRoll]):'';
+  const gr= idxGr>=0? norm(row[idxGr]): (currentKeyCol>=0? norm(row[currentKeyCol]):'');
+  const dob= idxDob>=0? norm(row[idxDob]):'';
+  const addr=idxAddr>=0? norm(row[idxAddr]):'';
+  const mob= idxMob>=0? norm(row[idxMob]):'';
+  document.getElementById('el-name').textContent=full;
+  const set=(k,v)=>{ const el=document.querySelector(`[data-f="${k}"]`); if(el) el.textContent=v||'-'; };
+  set('std',std); set('div',div); set('roll',roll); set('gr',gr); set('dob',dob); set('addr',addr); set('mob',mob);
+  const photoSrc=getPhotoForRow(row);
+  if(photoSrc){ els.photoEl.src=photoSrc; els.photoEl.style.display=''; document.getElementById('missingBadge').style.display='none'; }
+  else { els.photoEl.removeAttribute('src'); els.photoEl.style.display='block'; els.photoEl.style.background='#ddd'; document.getElementById('missingBadge').style.display='block'; }
+  // mapping box for selected row
+  updateMapBox();
+  const keyName=headers[currentKeyCol]||`col ${currentKeyCol+1}`;
+  const has=!!photoSrc;
+  document.getElementById('cardStats').innerHTML=`Row <b>${selectedRowIdx+1}/${dataRows.length}</b> • <b>${esc(full.slice(0,40))}</b> • Key <b>${esc(keyName)}=${esc(norm(row[currentKeyCol]||'-'))}</b> → <b style="color:${has?'#1a9b4a':'#c00'}">${has?'photo found':'no photo'}</b> • zoom ${Math.round(parseFloat(document.getElementById('zoom').value)*100)}%`;
+  document.getElementById('rowSelect').value=String(selectedRowIdx);
+}
+function updateMapBox(){
+  const box=document.getElementById('mapBox'), hint=document.getElementById('mapHint');
+  if(!dataRows.length){ box.style.display='none'; hint.style.display='block'; return; }
+  const keyName=headers[currentKeyCol]||'key';
+  const row=dataRows[selectedRowIdx];
+  const val= row? norm(row[currentKeyCol]||''): '';
+  const url= row? getPhotoForRow(row):'';
+  const found=!!url;
+  box.style.display='block'; hint.style.display='none';
+  const total = photoMap.size/2|0; // we store 2 keys per file
+  box.innerHTML=`
+    <div class="col-item"><span>Selected row <b>#${selectedRowIdx+1}</b></span><span class="badge">${esc(val||'—')}.jpg</span></div>
+    <div class="col-item"><span>Photo <b style="color:${found?'#1a9b4a':'#c00'}">${found?'FOUND':'MISSING'}</b></span><span style="font-size:11px;color:#666">${found?'ready (480p)':'upload folder'}</span></div>
+    <div class="col-item"><span>Loaded photos</span><span class="badge">${total} files</span></div>
+    <div class="col-item" style="flex-direction:column;align-items:flex-start"><span style="font-size:11px">Image file mapping column: <b>${esc(keyName)}</b> → <code>{value}.jpg</code></span><span style="font-size:10px;color:#666">Example: ${esc(val||'15672')}.jpg must exist in selected folder</span></div>
+  `;
+  document.getElementById('step3sub').textContent = found? `✓ ${val}.jpg found` : (total? `${total} files — ${val||'?'} missing` : 'Select folder');
+}
+
+// ---------- Print All (10 per A4 page, only linked photos) ----------
+function buildPrintCardHTML(row){
+  const idxStd=findColIndex(headers,['std','class','standard']);
+  const idxDiv=findColIndex(headers,['div','division']);
+  const idxRoll=findColIndex(headers,['roll']);
+  const idxGr=findColIndex(headers,['g.r','gr no','gr.','gr']);
+  const idxName=findColIndex(headers,['name']);
+  const idxMid=findColIndex(headers,['middle']);
+  const idxDob=findColIndex(headers,['d.o.b','dob','birth']);
+  const idxAddr=findColIndex(headers,['address','addr','add.']);
+  const idxMob=findColIndex(headers,['mobile','contact','phone','contact no']);
+  const name=norm(row[idxName>=0?idxName:2]||'');
+  const mid= idxMid>=0? norm(row[idxMid]||''):'';
+  let full=name; if(mid && !full.toLowerCase().includes(mid.toLowerCase())) full=(full+' '+mid).trim(); if(!full) full='—';
+  const std= idxStd>=0? norm(row[idxStd]):'';
+  const div= idxDiv>=0? norm(row[idxDiv]):'';
+  const roll=idxRoll>=0? norm(row[idxRoll]):'';
+  const gr= idxGr>=0? norm(row[idxGr]): (currentKeyCol>=0? norm(row[currentKeyCol]):'');
+  const dob= idxDob>=0? norm(row[idxDob]):'';
+  const addr=idxAddr>=0? norm(row[idxAddr]):'';
+  const mob= idxMob>=0? norm(row[idxMob]):'';
+  const photoSrc=getPhotoForRow(row)||'';
+  const sigSrc=sigURL||'';
+  const bgSrc=bgURL||'';
+  function s(id){ const c=cfg[id]; return `top:${c.top}%;left:${c.left}%;width:${c.w}%;height:${c.h}%;z-index:${c.z};`; }
+  function fs(id){
+    const c=cfg[id];
+    let t=`font-size:${c.fs}px;${c.lh!=null?`line-height:${c.lh}px;`:''}`;
+    if(c.color) t+=`color:${c.color};`;
+    if(c.align) t+=`text-align:${c.align};`;
+    t+=`font-style:${c.italic?'italic':'normal'};`;
+    if(id==='name') t+=`font-weight:${c.bold?'900':'400'};`;
+    else if(id==='principal') t+=`font-weight:${c.bold?'800':'400'};`;
+    else if(id==='details') t+=`font-weight:${c.bold?'700':'400'};`;
+    else t+=`font-weight:${c.bold?'800':'400'};`;
+    return t;
+  }
+  function photoExtra(){
+    const c=cfg.photo;
+    const br = (c.frame||'circle')==='circle' ? '50%' : '6px';
+    const bw = parseFloat(c.bw)||0;
+    const bc = c.bcolor||'#0e2eb8';
+    return `border-radius:${br};${bw>0?`border:${bw}px solid ${bc};`: 'border:none;'}box-sizing:border-box;`;
+  }
+  // build card without selectable outlines, no overlays/badges
+  return `
+  <div class="card" style="transform:none">
+    ${photoSrc ? `<img class="photo" src="${photoSrc}" style="${s('photo')}${photoExtra()}" alt="">` : `<div class="photo" style="${s('photo')}${photoExtra()}background:#e0e0e0"></div>`}
+    ${bgSrc ? `<img class="bg" src="${bgSrc}" style="${s('bg')}" alt="">` : `<div class="bg" style="${s('bg')};border:0.3px solid #ddd;background:#fff"></div>`}
+    ${sigSrc ? `<img class="sig" src="${sigSrc}" style="${s('sig')}" alt="">` : ``}
+    <div class="principal" style="${s('principal')}${fs('principal')}">${esc('Principal')}</div>
+    <div class="name" style="${s('name')}${fs('name')}">${esc(full)}</div>
+    <div class="details" style="${s('details')}${fs('details')}">
+      <div class="row cols-3"><span class="k">Std.:</span><span class="v">${esc(std||'-')}</span><span class="k">Div.:</span><span class="v">${esc(div||'-')}</span><span class="k">Roll No.:</span><span class="v">${esc(roll||'-')}</span></div>
+      <div class="row cols-2"><span class="k">G.R.No.:</span><span class="v">${esc(gr||'-')}</span><span class="k">D.O.B.:</span><span class="v">${esc(dob||'-')}</span></div>
+      <div class="row cols-1"><span class="k">Add.:</span><span class="v">${esc(addr||'-')}</span></div>
+      <div class="row cols-1"><span class="k">Contact No.:</span><span class="v">${esc(mob||'-')}</span></div>
+    </div>
+  </div>`;
+}
+function printAll(){
+  if(!dataRows.length){ alert('Please upload CSV first (Step 2)'); return; }
+  if(!bgURL){ alert('Please select a background image first (Step 1)'); return; }
+  if(!photoMap.size){ alert('Please select photos folder first (Step 3)'); return; }
+  const linked = dataRows.filter(r=> !!getPhotoForRow(r));
+  if(!linked.length){ alert('No cards have linked photos for current key column ('+(headers[currentKeyCol]||'key')+'). Check mapping in Step 3.'); return; }
+  const wrap=document.getElementById('printAllWrap');
+  wrap.innerHTML='';
+  // chunk 10 per page
+  for(let i=0;i<linked.length;i+=10){
+    const chunk=linked.slice(i,i+10);
+    const page=document.createElement('div');
+    page.className='print-page';
+    page.innerHTML = chunk.map(r=> buildPrintCardHTML(r)).join('');
+    wrap.appendChild(page);
+  }
+  document.body.classList.add('printing-all');
+  // trigger print after a tick to allow images to load
+  setTimeout(()=> window.print(), 350);
+  window.addEventListener('afterprint', function handler(){
+    window.removeEventListener('afterprint', handler);
+    document.body.classList.remove('printing-all');
+  });
+  // fallback: remove class if print dialog cancelled (some browsers don't fire afterprint)
+  setTimeout(()=> document.body.classList.remove('printing-all'), 5000);
+}
+
+// ---------- Stepper ----------
+function stepDone(n, sub){
+  const el=document.getElementById('step'+n);
+  el.classList.add('done'); el.classList.remove('active');
+  if(sub) document.getElementById('step'+n+'sub').textContent=sub;
+  const next=document.getElementById('step'+(n+1));
+  if(next) next.classList.add('active');
+}
+
+// ---------- Misc ----------
+function resetLayout(){
+  cfg=JSON.parse(JSON.stringify(defaults));
+  selectedId=null;
+  document.querySelectorAll('.selectable').forEach(e=> e.classList.remove('selected'));
+  applyCfg(); selectId(null);
+  localStorage.removeItem('buhs_single_cfg');
+}
+document.getElementById('zoom').addEventListener('input', e=>{
+  const v=parseFloat(e.target.value); els.card.style.transform=`scale(${v})`; document.getElementById('zoomV').textContent=Math.round(v*100)+'%';
+  const st=document.getElementById('cardStats'); if(st) st.innerHTML += '';
+  renderSingle();
+});
+document.querySelectorAll('.selectable').forEach(el=> el.addEventListener('click', ()=> selectId(el.dataset.id)));
+
+// init — no defaults are auto-loaded; user must select background & CSV
+bindProps();
+loadCfg();
+updateLayerList();
+selectId(null);
+(function initEmptyState(){
+  // ensure card shows placeholders until user selects
+  const bgOverlay=document.getElementById('noBgOverlay');
+  const csvOverlay=document.getElementById('noCsvOverlay');
+  if(!bgURL && bgOverlay) bgOverlay.style.display='grid';
+  // CSV overlay is shown/hidden in renderSingle
+  renderSingle();
+})();
+
+
+// expose for console
+window._cfg=cfg;
+</script>
+</body>
+</html>
